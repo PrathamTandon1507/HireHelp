@@ -329,13 +329,7 @@ cd hirehelp
 docker-compose up --build
 ```
 
-**Step 3: Access Application**
-- **Frontend:** http://localhost:5173
-- **Backend API:** http://localhost:3000
-- **MongoDB:** localhost:27017
-- **ML Service:** http://localhost:5000 (when implemented)
-
-**Step 4: Stop Services**
+**Step 3: Stop Services**
 ```bash
 # Stop and remove containers
 docker-compose down
@@ -404,76 +398,6 @@ docker-compose exec backend npm install new-package
 
 ---
 
-## 📁 Project Structure
-
-```
-hirehelp/
-├── frontend/                    # React application
-│   ├── src/
-│   │   ├── components/         # Reusable UI components
-│   │   │   ├── DashboardLayout.jsx
-│   │   │   ├── StatCard.jsx
-│   │   │   ├── JobCard.jsx
-│   │   │   └── CandidateCard.jsx
-│   │   ├── pages/              # Page components
-│   │   │   ├── Auth.jsx
-│   │   │   ├── dashboard/
-│   │   │   │   ├── AdminDashboard.jsx
-│   │   │   │   ├── RecruiterDashboard.jsx
-│   │   │   │   └── ApplicantDashboard.jsx
-│   │   │   ├── JobCreate.jsx
-│   │   │   ├── JobList.jsx
-│   │   │   ├── JobDetails.jsx
-│   │   │   ├── ApplicantProfile.jsx
-│   │   │   ├── CandidateShortlist.jsx
-│   │   │   └── HiringWorkflow.jsx
-│   │   ├── context/            # React Context providers
-│   │   │   ├── AuthContext.jsx
-│   │   │   ├── NotificationContext.jsx
-│   │   │   └── JobContext.jsx
-│   │   ├── assets/             # Images, fonts, static files
-│   │   └── App.jsx             # Main app component
-│   ├── public/                 # Static public assets
-│   ├── package.json
-│   ├── vite.config.js
-│   ├── tailwind.config.js
-│   └── Dockerfile
-├── backend/                     # Node.js API server
-│   ├── src/
-│   │   ├── routes/             # API routes
-│   │   ├── controllers/        # Business logic
-│   │   ├── models/             # MongoDB schemas
-│   │   ├── middleware/         # Auth, validation, error handling
-│   │   ├── utils/              # Helper functions
-│   │   └── server.js           # Express app entry point
-│   ├── package.json
-│   └── Dockerfile
-├── ml-service/                  # Python ML/AI service
-│   ├── app.py                  # Flask API
-│   ├── services/
-│   │   ├── resume_parser.py
-│   │   ├── matching_engine.py
-│   │   └── question_generator.py
-│   ├── requirements.txt
-│   └── Dockerfile
-├── blockchain/                  # Smart contracts
-│   ├── contracts/
-│   │   └── AuditTrail.sol
-│   ├── scripts/
-│   │   └── deploy.js
-│   └── hardhat.config.js
-├── docs/                        # Documentation & diagrams
-│   ├── architecture.drawio
-│   ├── architecture.png
-│   ├── wireframes/
-│   └── assignment-screenshots/
-├── .gitignore
-├── docker-compose.yml
-└── README.md
-```
-
----
-
 ## 🎨 Key Features & Functionality
 
 ### 1. Intelligent Authentication System
@@ -539,51 +463,6 @@ hirehelp/
 
 ---
 
-## 📝 Development Workflow
-
-### 1. Pick a Feature from GitHub Issues
-```bash
-# View issues: https://github.com/PratTandon/hirehelp/issues
-# Pick an issue with "must-have" label
-```
-
-### 2. Create Feature Branch
-```bash
-git checkout main
-git pull origin main
-git checkout -b feature/your-feature-name
-```
-
-### 3. Develop Locally
-```bash
-# Start Docker services
-docker-compose up
-
-# Or run services individually
-cd frontend && npm run dev
-cd backend && npm run dev
-```
-
-### 4. Commit Changes
-```bash
-git add .
-git commit -m "feat: add user authentication system"
-git push origin feature/your-feature-name
-```
-
-### 5. Create Pull Request
-- Go to GitHub repository
-- Click "Compare & pull request"
-- Add description referencing issue: `Closes #5`
-- Request review (if team member available)
-
-### 6. Merge & Deploy
-- Merge PR via GitHub UI
-- Delete feature branch
-- Pull latest main locally
-
----
-
 ## 🤝 Contributing
 
 This is an academic project, but contributions and feedback are welcome!
@@ -598,7 +477,7 @@ This is an academic project, but contributions and feedback are welcome!
 
 ## 📄 License
 
-This project is developed for academic purposes.
+This project is developed for academic purposes. Created by Pratham Tandon.
 
 ---
 
@@ -610,6 +489,3 @@ This project is developed for academic purposes.
 - Blockchain integration for audit transparency
 
 ---
-
-**Last Updated:** January 25, 2026
-**Version:** 0.1.0-alpha
