@@ -297,10 +297,10 @@ main (production-ready)
 
 ### Active Feature Branches
 
-- ✅ `feature/job-cards-and-scoring` - Job display and AI scoring UI
-- ✅ `feature/backend-api-skeleton` - Express API structure and routes
-- ✅ `feature/ai-ml-pipeline-design` - Python ML service architecture
-- ✅ `feature/audit-blockchain-placeholder` - Smart contract integration
+-  `feature/job-cards-and-scoring` - Job display and AI scoring UI
+-  `feature/backend-api-skeleton` - Express API structure and routes
+-  `feature/ai-ml-pipeline-design` - Python ML service architecture
+-  `feature/audit-blockchain-placeholder` - Smart contract integration
 
 ---
 
@@ -309,10 +309,10 @@ main (production-ready)
 ### Prerequisites
 
 Ensure you have these installed:
-- ✅ **Docker Desktop** (recommended) - [Download](https://www.docker.com/products/docker-desktop/)
-- ✅ **Node.js 18+** - [Download](https://nodejs.org/)
-- ✅ **Git** - [Download](https://git-scm.com/)
-- ✅ **MongoDB Compass** (optional, for DB GUI) - [Download](https://www.mongodb.com/products/compass)
+-  **Docker Desktop** (recommended) - [Download](https://www.docker.com/products/docker-desktop/)
+-  **Node.js 18+** - [Download](https://nodejs.org/)
+-  **Git** - [Download](https://git-scm.com/)
+-  **MongoDB Compass** (optional, for DB GUI) - [Download](https://www.mongodb.com/products/compass)
 
 ---
 
