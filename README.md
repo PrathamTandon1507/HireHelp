@@ -326,8 +326,8 @@ Ensure you have these installed:
 
 **Step 1: Clone Repository**
 ```bash
-git clone https://github.com/PrathamTandon1507/hirehelp.git
-cd hirehelp
+git clone https://github.com/PrathamTandon1507/HireHelp.git
+cd HireHelp
 ```
 
 **Step 2: Build and Start All Services**
@@ -476,7 +476,7 @@ docker-compose exec backend npm install new-package
 
 ### 1. Pick a Feature from GitHub Issues
 ```bash
-# View issues: https://github.com/PrathamTandon1507/hirehelp/issues
+# View issues: https://github.com/PrathamTandon1507/HireHelp/issues
 # Pick an issue with "must-have" label
 ```
 
