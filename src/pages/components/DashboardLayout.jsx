@@ -1,9 +1,13 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 const DashboardLayout = ({ children, title, subtitle }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout } = useAuth();
+
+  console.log("Current location:", location.pathname);
+  console.log("Current user:", user);
 
   const navigation = {
     admin: [
@@ -24,6 +28,11 @@ const DashboardLayout = ({ children, title, subtitle }) => {
   };
 
   const navItems = navigation[user?.role] || [];
+
+  const handleNavigation = (path) => {
+    console.log("Navigating to:", path);
+    navigate(path);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0b1220] via-[#0f172a] to-[#020617] relative overflow-hidden">
@@ -61,7 +70,7 @@ const DashboardLayout = ({ children, title, subtitle }) => {
           {navItems.map((item) => (
             <button
               key={item.path}
-              onClick={() => navigate(item.path)}
+              onClick={() => handleNavigation(item.path)}
               className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-[#e5e7eb] hover:text-[#f8fafc] rounded-lg hover:bg-gradient-to-r hover:from-[#2563eb]/20 hover:to-[#3b82f6]/10 transition-all duration-200 group"
             >
               <span className="text-[#22d3ee] group-hover:scale-110 transition-transform duration-200">
@@ -104,10 +113,10 @@ const DashboardLayout = ({ children, title, subtitle }) => {
           50% { opacity: 0.5; }
         }
         @keyframes pulse-slower {
-          0%, 100% { opacity:  0.2; }
+          0%, 100% { opacity: 0.2; }
           50% { opacity: 0.4; }
         }
-        . animate-pulse-slow {
+        .animate-pulse-slow {
           animation: pulse-slow 8s ease-in-out infinite;
         }
         .animate-pulse-slower {
