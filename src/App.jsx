@@ -8,14 +8,12 @@ import Auth from "./pages/Auth";
 import AdminDashboard from "./pages/dashboard/AdminDashboard";
 import RecruiterDashboard from "./pages/dashboard/RecruiterDashboard";
 import ApplicantDashboard from "./pages/dashboard/ApplicantDashboard";
-
-// TODO: Uncomment as pages are created
-// import JobCreate from "./pages/JobCreate";
-// import JobDetails from "./pages/JobDetails";
-// import JobList from "./pages/JobList";
-// import ApplicantProfile from "./pages/ApplicantProfile";
-// import CandidateShortlist from "./pages/CandidateShortlist";
-// import HiringWorkflow from "./pages/HiringWorkflow";
+import JobCreate from "./pages/JobCreate";
+import JobDetails from "./pages/JobDetails";
+import JobList from "./pages/JobList";
+import ApplicantProfile from "./pages/ApplicantProfile";
+import CandidateShortlist from "./pages/CandidateShortlist";
+import HiringWorkflow from "./pages/HiringWorkflow";
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -68,65 +66,71 @@ function App() {
               {/* Public Route */}
               <Route path="/auth" element={<Auth />} />
 
-              {/* Protected Routes */}
-              <Route path="/dashboard" element={<DashboardRouter />} />
+              {/* Protected Dashboard Route */}
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <DashboardRouter />
+                  </ProtectedRoute>
+                }
+              />
 
-              {/* TODO:  Uncomment routes as pages are created */}
               {/* Job Management Routes */}
-              {/* <Route
+              <Route
                 path="/jobs"
                 element={
                   <ProtectedRoute>
                     <JobList />
                   </ProtectedRoute>
                 }
-              /> */}
-              {/* <Route
+              />
+              <Route
                 path="/jobs/create"
                 element={
                   <ProtectedRoute allowedRoles={["admin", "recruiter"]}>
                     <JobCreate />
                   </ProtectedRoute>
                 }
-              /> */}
-              {/* <Route
+              />
+              <Route
                 path="/jobs/:jobId"
                 element={
                   <ProtectedRoute>
                     <JobDetails />
                   </ProtectedRoute>
                 }
-              /> */}
+              />
 
               {/* Applicant Profile Route */}
-              {/* <Route
+              <Route
                 path="/profile"
                 element={
                   <ProtectedRoute allowedRoles={["applicant"]}>
                     <ApplicantProfile />
                   </ProtectedRoute>
                 }
-              /> */}
+              />
 
               {/* Candidate Shortlisting Route */}
-              {/* <Route
-                path="/jobs/: jobId/shortlist"
+              <Route
+                path="/jobs/:jobId/shortlist"
                 element={
                   <ProtectedRoute allowedRoles={["admin", "recruiter"]}>
                     <CandidateShortlist />
                   </ProtectedRoute>
                 }
-              /> */}
+              />
 
               {/* Hiring Workflow Route */}
-              {/* <Route
-                path="/jobs/:jobId/candidates/: candidateId"
+              <Route
+                path="/jobs/:jobId/candidates/:candidateId"
                 element={
                   <ProtectedRoute allowedRoles={["admin", "recruiter"]}>
                     <HiringWorkflow />
                   </ProtectedRoute>
                 }
-              /> */}
+              />
 
               {/* Default Redirect */}
               <Route path="/" element={<Navigate to="/dashboard" replace />} />

@@ -1,83 +1,24 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
+import { useJob } from "../../context/JobContext"; // ADD THIS
 import DashboardLayout from "../components/DashboardLayout";
 import StatCard from "../components/StatCard";
 import JobCard from "../components/JobCard";
 
 const AdminDashboard = () => {
-  const [stats, setStats] = useState({
-    totalJobs: 0,
-    activeJobs: 0,
-    totalApplicants: 0,
-    offersExtended: 0,
-  });
-  const [recentJobs, setRecentJobs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { jobs, fetchJobs, loading } = useJob(); // USE CONTEXT
 
   useEffect(() => {
-    // Fetch dashboard data
-    const fetchDashboardData = async () => {
-      try {
-        // const response = await fetch('/api/admin/dashboard', {
-        //   headers: { 'Authorization': `Bearer ${localStorage.getItem('hirehelp_token')}` }
-        // });
-        // const data = await response.json();
-
-        // Mock data
-        setStats({
-          totalJobs: 24,
-          activeJobs: 12,
-          totalApplicants: 387,
-          offersExtended: 15,
-        });
-
-        setRecentJobs([
-          {
-            _id: "1",
-            title: "Senior Backend Engineer",
-            department: "Engineering",
-            description:
-              "We are looking for an experienced backend engineer to join our growing team.. .",
-            location: "San Francisco, CA",
-            type: "Full-time",
-            status: "active",
-            applicants: 45,
-            createdAt: "2026-01-10T00:00:00Z",
-          },
-          {
-            _id: "2",
-            title: "Product Designer",
-            department: "Design",
-            description:
-              "Join our design team to create beautiful and functional user experiences...",
-            location: "Remote",
-            type: "Full-time",
-            status: "active",
-            applicants: 32,
-            createdAt: "2026-01-12T00:00:00Z",
-          },
-          {
-            _id: "3",
-            title: "Data Scientist",
-            department: "Data & Analytics",
-            description:
-              "Help us unlock insights from our data to drive business decisions...",
-            location: "New York, NY",
-            type: "Full-time",
-            status: "active",
-            applicants: 28,
-            createdAt: "2026-01-15T00:00:00Z",
-          },
-        ]);
-
-        setLoading(false);
-      } catch (error) {
-        console.error("Failed to fetch dashboard data:", error);
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardData();
+    fetchJobs(); // Fetch jobs on mount
   }, []);
+
+  const stats = {
+    totalJobs: jobs.length,
+    activeJobs: jobs.filter((j) => j.status === "active").length,
+    totalApplicants: jobs.reduce((sum, job) => sum + (job.applicants || 0), 0),
+    offersExtended: 15,
+  };
+
+  const recentJobs = jobs.slice(0, 3); // Show first 3 jobs
 
   if (loading) {
     return (
@@ -86,7 +27,7 @@ const AdminDashboard = () => {
         subtitle="System overview and job management"
       >
         <div className="flex items-center justify-center h-64">
-          <div className="text-[#9ca3af] font-mono">Loading dashboard... </div>
+          <div className="text-[#9ca3af] font-mono">Loading dashboard...</div>
         </div>
       </DashboardLayout>
     );
@@ -113,7 +54,11 @@ const AdminDashboard = () => {
           subtitle="Currently hiring"
           icon="◇"
           accentColor="#10b981"
-          trend={{ value: "12", label: "open positions", positive: true }}
+          trend={{
+            value: `${stats.activeJobs}`,
+            label: "open positions",
+            positive: true,
+          }}
         />
         <StatCard
           title="Total Applicants"
@@ -192,20 +137,29 @@ const AdminDashboard = () => {
           <h2 className="text-xl font-semibold text-[#f8fafc]">
             Active Job Postings
           </h2>
-          <button className="px-4 py-2 text-sm font-medium text-[#22d3ee] hover:text-[#f8fafc] transition-colors">
+          <button
+            onClick={() => (window.location.href = "/jobs")}
+            className="px-4 py-2 text-sm font-medium text-[#22d3ee] hover:text-[#f8fafc] transition-colors"
+          >
             View all →
           </button>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {recentJobs.map((job) => (
-            <JobCard
-              key={job._id}
-              job={job}
-              showActions={true}
-              actionType="view"
-            />
-          ))}
-        </div>
+        {recentJobs.length === 0 ? (
+          <div className="text-center text-[#9ca3af] py-12">
+            No jobs posted yet. Create your first job!
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {recentJobs.map((job) => (
+              <JobCard
+                key={job._id}
+                job={job}
+                showActions={true}
+                actionType="view"
+              />
+            ))}
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );
