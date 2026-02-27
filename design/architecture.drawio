@@ -1,0 +1,167 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36" version="29.4.0">
+  <diagram name="Page-1" id="oivpSMZRe5IaTlBvUFtM">
+    <mxGraphModel dx="1737" dy="878" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="layer_presentation" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontColor=#000000;fontSize=16;" value="Presentation Layer" vertex="1">
+          <mxGeometry height="150" width="750" x="50" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="comp_web_frontend" parent="layer_presentation" style="whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#000000;fontSize=12;" value="Web Frontend&lt;br&gt;(Applicants, Recruiters, Admins)" vertex="1">
+          <mxGeometry height="70" width="350" x="200" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="layer_application" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#D5E8D4;strokeColor=#82B366;fontColor=#000000;fontSize=16;" value="Application Layer" vertex="1">
+          <mxGeometry height="120" width="750" x="50" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="comp_api_controllers" parent="layer_application" style="whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#000000;fontSize=12;" value="API Controllers&lt;br&gt;(Auth, AuthZ, Request Handling, Workflow Orchestration)" vertex="1">
+          <mxGeometry height="60" width="350" x="200" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="layer_service" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#FFE6CC;strokeColor=#D79B00;fontColor=#000000;fontSize=16;" value="Service Layer" vertex="1">
+          <mxGeometry height="250" width="750" x="50" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="comp_resume_processing_service" parent="layer_service" style="whiteSpace=wrap;html=1;fillColor=#FFE6CC;strokeColor=#000000;fontSize=12;" value="Resume Processing Service&lt;br&gt;(Text Extraction, Embeddings)" vertex="1">
+          <mxGeometry height="60" width="200" x="140" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="comp_ai_matching_explanation_service" parent="layer_service" style="whiteSpace=wrap;html=1;fillColor=#FFE6CC;strokeColor=#000000;fontSize=12;" value="AI Matching &amp; Explanation Service" vertex="1">
+          <mxGeometry height="60" width="200" x="280" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="comp_workflow_validation_service" parent="layer_service" style="whiteSpace=wrap;html=1;fillColor=#FFE6CC;strokeColor=#000000;fontSize=12;" value="Workflow Validation Service" vertex="1">
+          <mxGeometry height="60" width="200" x="510" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="comp_audit_hashing_service" parent="layer_service" style="whiteSpace=wrap;html=1;fillColor=#FFE6CC;strokeColor=#000000;fontSize=12;" value="Audit &amp; Hashing Service" vertex="1">
+          <mxGeometry height="80" width="200" x="30" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="comp_analytics_service" parent="layer_service" style="whiteSpace=wrap;html=1;fillColor=#FFE6CC;strokeColor=#000000;fontSize=12;" value="Analytics Service" vertex="1">
+          <mxGeometry height="60" width="200" x="390" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="comp_blockchain" parent="layer_service" style="whiteSpace=wrap;html=1;dashed=1;fillColor=#FFFFFF;strokeColor=#000000;fontSize=12;" value="Minimal Blockchain Component&lt;br&gt;(Finalized Decision Hashes)" vertex="1">
+          <mxGeometry height="70" width="110" x="10" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_audit_to_blockchain" edge="1" parent="layer_service" source="comp_audit_hashing_service" style="endArrow=classic;html=1;strokeColor=#000000;fillColor=#000000;" target="comp_blockchain" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="70" y="150" />
+            </Array>
+            <mxPoint x="300" y="190" as="sourcePoint" />
+            <mxPoint x="800" y="260" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="layer_data" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=10;fillColor=#F5F5F5;strokeColor=#666666;fontColor=#000000;fontSize=16;" value="Data Layer" vertex="1">
+          <mxGeometry height="150" width="750" x="50" y="700" as="geometry" />
+        </mxCell>
+        <mxCell id="comp_nosql_database" parent="layer_data" style="shape=cylinder;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#F5F5F5;strokeColor=#000000;fontSize=12;" value="NoSQL Database&lt;br&gt;(Users, Jobs, Applications, Feedback)" vertex="1">
+          <mxGeometry height="80" width="180" x="50" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="comp_vector_store" parent="layer_data" style="shape=cylinder;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#F5F5F5;strokeColor=#000000;fontSize=12;" value="Vector Store&lt;br&gt;(Semantic Embeddings)" vertex="1">
+          <mxGeometry height="80" width="180" x="280" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="comp_object_storage" parent="layer_data" style="shape=cylinder;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#F5F5F5;strokeColor=#000000;fontSize=12;" value="Object Storage&lt;br&gt;(Resumes, Artifacts)" vertex="1">
+          <mxGeometry height="80" width="180" x="510" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="conn_presentation_to_application" edge="1" parent="1" source="comp_web_frontend" style="endArrow=classic;html=1;strokeColor=#000000;fillColor=#000000;fontSize=12;" target="comp_api_controllers" value="REST API">
+          <mxGeometry relative="1" width="160" as="geometry">
+            <mxPoint x="375" y="200" as="sourcePoint" />
+            <mxPoint x="375" y="250" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="conn_application_to_resume_processing" edge="1" parent="1" source="comp_api_controllers" style="endArrow=classic;html=1;strokeColor=#000000;fillColor=#000000;" target="comp_resume_processing_service" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="310" y="410" />
+            </Array>
+            <mxPoint x="200" y="370" as="sourcePoint" />
+            <mxPoint x="200" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="conn_application_to_ai_matching" edge="1" parent="1" source="comp_api_controllers" style="endArrow=classic;html=1;strokeColor=#000000;fillColor=#000000;" target="comp_ai_matching_explanation_service" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="375" y="370" as="sourcePoint" />
+            <mxPoint x="375" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="conn_application_to_workflow_validation" edge="1" parent="1" source="comp_api_controllers" style="endArrow=classic;html=1;strokeColor=#000000;fillColor=#000000;" target="comp_workflow_validation_service" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="550" y="370" as="sourcePoint" />
+            <mxPoint x="550" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="conn_application_to_audit" edge="1" parent="1" source="comp_api_controllers" style="endArrow=classic;html=1;strokeColor=#000000;fillColor=#000000;" target="comp_audit_hashing_service" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="250" y="400" />
+            </Array>
+            <mxPoint x="250" y="370" as="sourcePoint" />
+            <mxPoint x="250" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="conn_application_to_analytics" edge="1" parent="1" source="comp_api_controllers" style="endArrow=classic;html=1;strokeColor=#000000;fillColor=#000000;" target="comp_analytics_service" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="475" y="385" />
+              <mxPoint x="540" y="410" />
+            </Array>
+            <mxPoint x="475" y="370" as="sourcePoint" />
+            <mxPoint x="475" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="conn_resume_to_nosql" edge="1" parent="1" source="comp_resume_processing_service" style="endArrow=classic;html=1;strokeColor=#000000;fillColor=#000000;" target="comp_nosql_database" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="150" y="650" as="sourcePoint" />
+            <mxPoint x="150" y="700" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="conn_resume_to_vector_store" edge="1" parent="1" source="comp_resume_processing_service" style="endArrow=classic;html=1;strokeColor=#000000;fillColor=#000000;" target="comp_vector_store" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="330" y="640" />
+              <mxPoint x="350" y="710" />
+            </Array>
+            <mxPoint x="150" y="650" as="sourcePoint" />
+            <mxPoint x="370" y="700" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="conn_resume_to_object_storage" edge="1" parent="1" source="comp_resume_processing_service" style="endArrow=classic;html=1;strokeColor=#000000;fillColor=#000000;" target="comp_object_storage" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="590" y="700" />
+            </Array>
+            <mxPoint x="150" y="650" as="sourcePoint" />
+            <mxPoint x="600" y="700" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="conn_ai_matching_to_nosql" edge="1" parent="1" source="comp_ai_matching_explanation_service" style="endArrow=classic;html=1;strokeColor=#000000;fillColor=#000000;entryX=0.38;entryY=-0.054;entryDx=0;entryDy=0;entryPerimeter=0;" target="comp_nosql_database" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="420" y="660" />
+              <mxPoint x="170" y="675" />
+            </Array>
+            <mxPoint x="370" y="650" as="sourcePoint" />
+            <mxPoint x="150" y="700" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="conn_ai_matching_to_vector_store" edge="1" parent="1" source="comp_ai_matching_explanation_service" style="endArrow=classic;html=1;strokeColor=#000000;fillColor=#000000;" target="comp_vector_store" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="370" y="650" as="sourcePoint" />
+            <mxPoint x="370" y="700" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="conn_workflow_to_nosql" edge="1" parent="1" source="comp_workflow_validation_service" style="endArrow=classic;html=1;strokeColor=#000000;fillColor=#000000;" target="comp_nosql_database" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="670" y="630" />
+              <mxPoint x="500" y="670" />
+            </Array>
+            <mxPoint x="600" y="650" as="sourcePoint" />
+            <mxPoint x="150" y="700" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="conn_audit_to_nosql" edge="1" parent="1" source="comp_audit_hashing_service" style="endArrow=classic;html=1;strokeColor=#000000;fillColor=#000000;" target="comp_nosql_database" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="250" y="650" as="sourcePoint" />
+            <mxPoint x="150" y="700" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
