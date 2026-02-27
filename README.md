@@ -24,6 +24,17 @@ Traditional recruitment processes face critical challenges:
 
 ---
 
+## Software Design
+
+The HireHelp system follows a layered client–server architecture that separates the user interface, application logic, core services, and data storage to ensure scalability and maintainability. Key system functionalities such as AI-assisted resume matching, workflow validation, analytics, and audit verification are implemented as independent, highly cohesive services that communicate through well-defined APIs, enabling low coupling and ease of future extension.
+
+The design emphasizes abstraction and modularity by isolating complex components like AI processing and audit mechanisms from core business logic. A controlled workflow engine enforces valid hiring stage transitions, while a minimal blockchain-based audit mechanism stores cryptographic hashes of finalized decisions to ensure integrity without exposing sensitive data.
+
+<img width="875" height="826" alt="image" src="https://github.com/user-attachments/assets/882c7e52-a096-4a6d-8eae-859dd4c77586" />
+
+
+
+
 ## 👥 Target Users (Personas)
 
 ### Persona 1: Sarah - Tech Recruiter
