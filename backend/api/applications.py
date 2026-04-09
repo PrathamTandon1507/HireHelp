@@ -15,7 +15,6 @@ from crud.job import get_job_by_id, list_jobs_by_company, list_jobs_by_recruiter
 from crud.user import get_user_by_id, get_users_by_ids
 from core.dependencies import get_current_user, require_recruiter
 from core.database import get_db
-from core.database import get_db
 from services.ai_services import ai_service
 import os
 from datetime import datetime
@@ -373,8 +372,8 @@ async def accept_offer(
     if not app or str(app["applicant_id"]) != current_user["user_id"]:
         raise HTTPException(status_code=404, detail="Application not found")
         
-    if app["stage"] != ApplicationStage.OFFER:
-        raise HTTPException(status_code=400, detail="Cannot accept. This application is not in the offer stage.")
+    if str(app.get("stage")).lower() != ApplicationStage.OFFER.value.lower():
+        raise HTTPException(status_code=400, detail=f"Cannot accept. This application is in '{app.get('stage')}' stage, not in '{ApplicationStage.OFFER.value}' stage.")
         
     await update_application_stage(db, app_id, ApplicationStage.ACCEPTED, "Candidate accepted the offer")
     
@@ -384,7 +383,7 @@ async def accept_offer(
         notif = Notification(
             recipient_id=job["posted_by"],
             sender_id=current_user["user_id"],
-            message=f"Candidate {current_user['fullName']} has ACCEPTED the offer for {job['title']}.",
+            message=f"Candidate {current_user.get('full_name', 'Candidate')} has ACCEPTED the offer for {job['title']}.",
             type="success",
             link=f"/jobs/{job['_id']}/candidates/{app_id}"
         )
@@ -403,8 +402,8 @@ async def reject_offer(
     if not app or str(app["applicant_id"]) != current_user["user_id"]:
         raise HTTPException(status_code=404, detail="Application not found")
         
-    if app["stage"] != ApplicationStage.OFFER:
-        raise HTTPException(status_code=400, detail="Cannot reject. This application is not in the offer stage.")
+    if str(app.get("stage")).lower() != ApplicationStage.OFFER.value.lower():
+        raise HTTPException(status_code=400, detail=f"Cannot reject. This application is in '{app.get('stage')}' stage, not in '{ApplicationStage.OFFER.value}' stage.")
         
     await update_application_stage(db, app_id, ApplicationStage.REJECTED, "Candidate rejected the offer")
     return {"message": "Offer rejected"}

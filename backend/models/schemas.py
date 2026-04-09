@@ -1,26 +1,8 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List
 from datetime import datetime
-from enum import Enum
+from .enums import UserRole, ApplicationStage, ApplicationStatus
 
-class UserRole(str, Enum):
-    ADMIN = "admin"
-    RECRUITER = "recruiter"
-    APPLICANT = "applicant"
-
-class ApplicationStage(str, Enum):
-    APPLIED = "applied"
-    SCREENING = "screening"
-    INTERVIEW = "interview"
-    OFFER = "offer"
-    ACCEPTED = "accepted"
-    REJECTED = "rejected"
-
-class ApplicationStatus(str, Enum):
-    PENDING = "pending"
-    SHORTLISTED = "shortlisted"
-    REJECTED = "rejected"
-    ACCEPTED = "accepted"
 
 # Auth Schemas
 class UserRegister(BaseModel):

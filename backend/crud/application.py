@@ -1,5 +1,7 @@
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from models.models import Application, ApplicationStage, ApplicationStatus
+from models.models import Application
+from models.enums import ApplicationStage, ApplicationStatus
+
 from bson import ObjectId
 from typing import List
 from datetime import datetime

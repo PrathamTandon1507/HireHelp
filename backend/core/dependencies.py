@@ -1,7 +1,8 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer
 from core.security import decode_token
-from models.models import UserRole
+from models.enums import UserRole
+
 from core.database import get_db
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from bson import ObjectId
@@ -35,7 +36,8 @@ async def get_current_user(
     return {
         "user_id": user_id, 
         "role": user.get("role", payload.get("role")),
-        "company_name": user.get("company_name", "Independent")
+        "company_name": user.get("company_name", "Independent"),
+        "full_name": user.get("full_name", "Unknown User")
     }
 
 async def require_admin(current_user: dict = Depends(get_current_user)):

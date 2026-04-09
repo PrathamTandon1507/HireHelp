@@ -1,5 +1,6 @@
 from z3 import *
-from models.models import ApplicationStage
+from models.enums import ApplicationStage
+
 from typing import Tuple
 
 class WorkflowValidator:

@@ -7,6 +7,7 @@ from crud.audit import create_audit_log
 from services.workflow import workflow_validator
 from services.blockchain import blockchain_service
 from models.models import AuditLog
+from models.enums import ApplicationStage
 from core.dependencies import require_recruiter
 from core.database import get_db
 
@@ -94,7 +95,7 @@ async def transition_stage(
     )
     
     blockchain_tx = None
-    if transition.new_stage == "offer":
+    if transition.new_stage == ApplicationStage.OFFER:
         blockchain_tx = blockchain_service.store_hash_on_blockchain(
             decision_hash, transition.application_id
         )

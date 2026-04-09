@@ -4,24 +4,8 @@ from enum import Enum
 from pydantic import BaseModel, Field, EmailStr
 
 # Enums
-class UserRole(str, Enum):
-    ADMIN = "admin"
-    RECRUITER = "recruiter"
-    APPLICANT = "applicant"
+from .enums import UserRole, ApplicationStage, ApplicationStatus
 
-class ApplicationStage(str, Enum):
-    APPLIED = "applied"
-    SCREENING = "screening"
-    INTERVIEW = "interview"
-    OFFER = "offer"
-    ACCEPTED = "accepted"
-    REJECTED = "rejected"
-
-class ApplicationStatus(str, Enum):
-    PENDING = "pending"
-    SHORTLISTED = "shortlisted"
-    REJECTED = "rejected"
-    ACCEPTED = "accepted"
 
 # Database Models (Motor/MongoDB)
 class User:

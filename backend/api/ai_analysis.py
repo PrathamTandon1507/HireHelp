@@ -6,7 +6,8 @@ from crud.job import get_job_by_id
 from services.ai_services import ai_service
 from core.dependencies import require_recruiter
 from core.database import get_db
-from models.models import ApplicationStatus
+from models.enums import ApplicationStatus
+
 from datetime import datetime
 
 router = APIRouter(prefix="/analyze", tags=["ai-analysis"])
