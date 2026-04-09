@@ -3,8 +3,8 @@ from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import ValidationError
-from app.core.config import settings
-from app.models.models import UserRole
+from core.config import settings
+from models.models import UserRole
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

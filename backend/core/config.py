@@ -1,33 +1,45 @@
 from pydantic_settings import BaseSettings
-from typing import Optional
 
 class Settings(BaseSettings):
+    # App Settings
     app_name: str = "HireHelp Backend"
     debug: bool = True
     api_v1_str: str = "/api/v1"
     
-    mongodb_url: str = "mongodb://localhost:27017"
+    # Database (REQUIRED - must be in .env)
+    mongodb_url: str
     database_name: str = "hirehelp"
     
-    secret_key: str = "your-super-secret-key-change-in-production"
+    # JWT & Security (REQUIRED - must be in .env)
+    secret_key: str
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
     
-    openai_api_key: str = ""
-    openai_model: str = "gpt-3.5-turbo"
+    # Groq AI/LLM (REQUIRED - must be in .env)
+    groq_api_key: str
+    groq_model: str = "llama-3.3-70b-versatile"
     
+    # Vector DB
     chroma_persist_dir: str = "./chroma_data"
     
+    # File Storage
     upload_dir: str = "./uploads"
-    max_file_size: int = 5 * 1024 * 1024  # 5MB
+    max_file_size: int = 5 * 1024 * 1024
     
-    blockchain_network: str = "local"  # local, sepolia, mainnet
-    smart_contract_address: str = ""
+    # Blockchain
+    blockchain_network: str = "local"
+    smart_contract_address: str = "0x0000000000000000000000000000000000000000"
+    blockchain_rpc_url: str = ""
+    blockchain_wallet_address: str = ""
+    blockchain_private_key: str = ""
     
+    # Z3 Verification
     enable_z3_validation: bool = True
     
     class Config:
-        env_file = ".env"
-        case_sensitive = True
+        import os
+        # Search for .env in current dir, then parent, then project root
+        env_file = ".env" if os.path.exists(".env") else "../.env"
+        case_sensitive = False
 
 settings = Settings()
