@@ -27,5 +27,5 @@ COPY ml/ ./ml/
 # Expose the port uvicorn will run on
 EXPOSE 8000
 
-# Start command
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Start command - we use the $PORT variable provided by Render or default to 8000
+CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

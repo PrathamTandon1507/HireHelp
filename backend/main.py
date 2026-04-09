@@ -46,13 +46,13 @@ async def lifespan(app: FastAPI):
         initialize_rag(settings.groq_api_key)
         print("✓ RAG System Initialized (FAISS + Groq)")
         
-        # Sync index with MongoDB (handles Render restarts)
+        # Sync index with MongoDB in BACKGROUND (don't block server start)
         db_instance = db.client[settings.database_name]
-        indexed_count = await sync_rag_with_db(db_instance)
-        if indexed_count > 0:
-            print(f"✓ RAG Sync: {indexed_count} candidates cached in memory")
+        # We wrap this in a task so Render doesn't timeout while waiting for indexing
+        asyncio.create_task(sync_rag_with_db(db_instance))
+        print("✓ RAG Sync: Started in background...")
     except Exception as e:
-        print(f"✗ RAG Initialization/Sync Error: {e}")
+        print(f"✗ RAG Initialization Error: {e}")
     
     yield
     
