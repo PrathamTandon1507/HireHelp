@@ -40,19 +40,22 @@ async def lifespan(app: FastAPI):
         print(f"✗ MongoDB Connection Warning: {e}")
         # We continue to allow the server to start
     
-    # Initialize RAG System (FAISS + Groq)
-    try:
-        from ml.rag_system import initialize_rag, sync_rag_with_db
-        initialize_rag(settings.groq_api_key)
-        print("✓ RAG System Initialized (FAISS + Groq)")
-        
-        # Sync index with MongoDB in BACKGROUND (don't block server start)
-        db_instance = db.client[settings.database_name]
-        # We wrap this in a task so Render doesn't timeout while waiting for indexing
-        asyncio.create_task(sync_rag_with_db(db_instance))
-        print("✓ RAG Sync: Started in background...")
-    except Exception as e:
-        print(f"✗ RAG Initialization Error: {e}")
+    # Initialize RAG System in BACKGROUND (FAISS loading can be slow)
+    async def bootstrap_rag():
+        try:
+            from ml.rag_system import initialize_rag, sync_rag_with_db
+            # This line loads the heavy sentence-transformer model
+            initialize_rag(settings.groq_api_key)
+            print("✓ RAG System Initialized (FAISS + Groq)")
+            
+            # Sync index with MongoDB
+            db_instance = db.client[settings.database_name]
+            await sync_rag_with_db(db_instance)
+        except Exception as e:
+            print(f"✗ RAG Background Error: {e}")
+
+    # Start the bootstrap task
+    asyncio.create_task(bootstrap_rag())
     
     yield
     
