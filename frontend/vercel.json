@@ -2,11 +2,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://YOUR_BACKEND_RENDER_URL/:path*"
+      "destination": "https://hirehelp.onrender.com/:path*"
     },
     {
       "source": "/uploads/:path*",
-      "destination": "https://YOUR_BACKEND_RENDER_URL/uploads/:path*"
+      "destination": "https://hirehelp.onrender.com/uploads/:path*"
     },
     {
       "source": "/(.*)",
