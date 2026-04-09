@@ -7,12 +7,13 @@ aiofiles==23.2.1
 
 # Auth & Security
 python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
+passlib==1.7.4
+bcrypt==4.0.1
 
-# Data validation — updated to latest stable with pre-built wheels for all Python versions
+# Data validation
 pydantic==2.7.4
 pydantic-settings==2.3.0
-email-validator==2.1.0.post1
+email-validator==2.1.1
 
 # Database
 motor==3.3.2

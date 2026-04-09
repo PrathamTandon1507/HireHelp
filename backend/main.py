@@ -1,5 +1,19 @@
 import sys
 import os
+import logging
+
+# ============================================================================
+# MONKEYPATCH: Fix passlib/bcrypt 4.0+ compatibility
+# This prevents "Internal Server Error" (500) during login/password verification
+# ============================================================================
+try:
+    import bcrypt
+    # passlib looks for bcrypt.__about__.__version__ which was removed in 4.0
+    if not hasattr(bcrypt, "__about__"):
+        bcrypt.__about__ = type("About", (), {"__version__": bcrypt.__version__})
+    print("✓ Passlib/Bcrypt compatibility patch applied")
+except ImportError:
+    print("⚠️ Bcrypt not found, skipping compatibility patch")
 
 # Set up PYTHONPATH at the earliest possible moment
 backend_dir = os.path.dirname(os.path.abspath(__file__))
@@ -67,6 +81,14 @@ app.include_router(audit.router)
 # Ensure uploads directory exists and mount it
 os.makedirs("uploads", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
+@app.get("/health")
+async def health(db: AsyncIOMotorDatabase = Depends(get_db)):
+    try:
+        await db.command("ping")
+        return {"status": "ok", "database": "connected"}
+    except Exception as e:
+        return {"status": "error", "database": str(e)}
 
 @app.get("/")
 async def root():
