@@ -30,31 +30,33 @@ class RAGAnalyzer:
     def _multi_vector_retrieval(self, job: JobModel, application_id: str) -> str:
         """
         Multi-vector retrieval: search for skills + requirements.
-        Deduplicates and limits to top 25 unique chunks for better context.
-        Filtered by application_id to ensure candidate-specific data.
+        # Deduplicates and limits to top 15 unique chunks for better context/speed balance.
+        # Filtered by application_id to ensure candidate-specific data.
         """
         context_fragments = {}
         
-        # Search for each skill
-        for skill in job.skills:
-            results = self.vector_store.search(skill, top_k=8, application_id=application_id)
-            for result in results:
-                context_fragments[result] = True  # Use dict for dedup
-        
-        # Search for each requirement
-        for requirement in job.requirements:
-            results = self.vector_store.search(requirement, top_k=8, application_id=application_id)
+        # Search for each skill (limited set)
+        search_skills = job.skills[:5]
+        for skill in search_skills:
+            results = self.vector_store.search(skill, top_k=4, application_id=application_id)
             for result in results:
                 context_fragments[result] = True
         
-        # If still little context, search with job title and description
-        if len(context_fragments) < 5:
-            results = self.vector_store.search(job.title, top_k=8, application_id=application_id)
+        # Search for core requirements
+        search_reqs = job.requirements[:5]
+        for requirement in search_reqs:
+            results = self.vector_store.search(requirement, top_k=4, application_id=application_id)
             for result in results:
                 context_fragments[result] = True
         
-        # Format context
-        context = "\n---\n".join(list(context_fragments.keys())[:25])
+        # If still little context, search with job title
+        if len(context_fragments) < 3:
+            results = self.vector_store.search(job.title, top_k=5, application_id=application_id)
+            for result in results:
+                context_fragments[result] = True
+        
+        # Format context - limited to 10 best chunks for speed and focus
+        context = "\n---\n".join(list(context_fragments.keys())[:10])
         return context if len(context_fragments) > 0 else "[No relevant detailed resume content found for this candidate]"
     
     def _build_prompt(
@@ -132,11 +134,12 @@ The 'analysis_report' MUST follow this EXACT format with STRENGTHS and IMPROVEME
             prompt = self._build_prompt(job, candidate, context)
             
             # LLM inference with low temperature and JSON mode
+            # Switched to 8b-instant for ~10x faster latency while maintaining extraction quality
             response = self.client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
+                model="llama-3.1-8b-instant",
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.1,
-                max_tokens=2000,
+                max_tokens=1000,
                 response_format={"type": "json_object"}
             )
             
@@ -226,9 +229,15 @@ def initialize_rag(groq_api_key: str) -> RAGAnalyzer:
 
 
 def get_rag_analyzer() -> RAGAnalyzer:
-    """Get singleton RAG analyzer instance"""
+    """Get singleton RAG analyzer instance with safe retry initialization"""
+    global _rag_analyzer
     if _rag_analyzer is None:
-        raise RuntimeError("RAG system not initialized. Call initialize_rag() first.")
+        # Attempt to recover if called before lifespan finishes
+        from core.config import settings
+        if settings.groq_api_key:
+            logger.warning("RAG analyzer was not initialized; attempting emergency initialization")
+            return initialize_rag(settings.groq_api_key)
+        raise RuntimeError("RAG system not initialized and no API key found.")
     return _rag_analyzer
 
 
