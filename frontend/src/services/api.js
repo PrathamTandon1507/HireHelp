@@ -46,6 +46,9 @@ const normalizeResponse = (data) => {
       if (key === 'ai_cons') newKey = 'aiCons';
       if (key === 'ai_skill_gaps') newKey = 'aiSkillGaps';
       if (key === 'ai_interview_questions') newKey = 'aiInterviewQuestions';
+      if (key === 'recipient_id') newKey = 'recipientId';
+      if (key === 'sender_id') newKey = 'senderId';
+      if (key === 'is_read') newKey = 'isRead';
       
       normalized[newKey] = normalizeResponse(data[key]);
     });
@@ -181,5 +184,12 @@ export const api = {
   },
   audit: {
     get: (id) => request(`/audit/${id}`)
+  },
+  notifications: {
+    list: () => request('/notifications'),
+    getUnreadCount: () => request('/notifications/unread-count'),
+    markAsRead: (id) => request(`/notifications/${id}/read`, {
+      method: 'PATCH'
+    })
   }
 };

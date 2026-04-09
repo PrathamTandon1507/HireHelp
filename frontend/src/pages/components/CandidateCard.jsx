@@ -14,6 +14,7 @@ const CandidateCard = ({ candidate, jobId, rank }) => {
     rejected:  { label: "Rejected",  color: "#64748b", bgColor: "bg-[#64748b]/10" },
   };
 
+  const isHired = candidate.stage === "accepted" || candidate.stage === "hired";
   const stage = stageConfig[candidate.stage] || stageConfig.applied;
 
   // Resolve the actual job ID to use for navigation
@@ -49,7 +50,20 @@ const CandidateCard = ({ candidate, jobId, rank }) => {
   const rankConfig = getRankConfig(rank);
 
   return (
-    <div className="relative rounded-xl bg-gradient-to-br from-[#1e293b]/80 to-[#0f172a]/80 border border-[#334155]/40 overflow-hidden group hover:border-[#475569]/60 transition-all duration-300 shadow-lg shadow-black/20">
+    <div className={`relative rounded-xl border overflow-hidden group transition-all duration-500 shadow-lg shadow-black/20 ${
+      isHired 
+        ? "bg-gradient-to-br from-[#10b981]/10 via-[#0f172a]/80 to-[#020617]/90 border-[#10b981]/50 shadow-[#10b981]/10 ring-1 ring-[#10b981]/20" 
+        : "bg-gradient-to-br from-[#1e293b]/80 to-[#0f172a]/80 border-[#334155]/40 hover:border-[#475569]/60"
+    }`}>
+      {/* Selected Badge */}
+      {isHired && (
+        <div className="absolute top-0 right-0 z-30">
+          <div className="bg-[#10b981] text-[#f8fafc] text-[10px] font-bold px-3 py-1 rounded-bl-lg shadow-lg flex items-center gap-1">
+            <span>⭐</span> SELECTED
+          </div>
+        </div>
+      )}
+
       {/* Rank Badge */}
       {rankConfig && (
         <div className={`absolute -left-1 -top-1 z-20 w-10 h-10 rounded-br-2xl bg-gradient-to-br ${rankConfig.color} flex items-center justify-center text-[#f8fafc] font-bold text-xs shadow-lg ${rankConfig.shadow} border-r border-b border-white/10`}>

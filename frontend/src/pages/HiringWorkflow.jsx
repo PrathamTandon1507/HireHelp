@@ -29,14 +29,16 @@ const HiringWorkflow = () => {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [auditLogs, setAuditLogs] = useState([]);
 
-  const stages = ["applied", "screening", "interview", "offer", "hired"];
+  const stages = ["applied", "screening", "interview", "offer", "accepted", "rejected"];
 
   const stageConfig = {
     applied: { label: "Applied", color: "#9ca3af", icon: "📝" },
     screening: { label: "Screening", color: "#22d3ee", icon: "🔍" },
     interview: { label: "Interview", color: "#2563eb", icon: "💬" },
     offer: { label: "Offer", color: "#10b981", icon: "📄" },
+    accepted: { label: "Hired", color: "#10b981", icon: "🎉" },
     hired: { label: "Hired", color: "#10b981", icon: "✓" },
+    rejected: { label: "Rejected", color: "#ef4444", icon: "🛑" },
   };
 
   useEffect(() => {
@@ -213,6 +215,29 @@ const HiringWorkflow = () => {
 
       {candidate && (
         <>
+          {/* Hired Banner */}
+          {(candidate.stage === "accepted" || candidate.stage === "hired") && (
+            <div className="mb-8 relative rounded-2xl overflow-hidden bg-gradient-to-r from-[#10b981] to-[#14b8a6] p-[1px] shadow-2xl shadow-[#10b981]/20 animate-slide-up">
+              <div className="bg-[#0f172a]/90 backdrop-blur-xl p-6 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex items-center gap-6 text-center md:text-left">
+                  <div className="w-16 h-16 rounded-full bg-[#10b981] flex items-center justify-center text-3xl shadow-lg shadow-[#10b981]/40 animate-bounce-slow">
+                    🎉
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-black text-[#f8fafc] mb-1">CANDIDATE HIRED</h2>
+                    <p className="text-[#10b981]/80 font-medium">The search is over! {candidate.name} has officially accepted the offer.</p>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <div className="px-4 py-2 bg-[#10b981]/10 rounded-lg border border-[#10b981]/30">
+                    <span className="text-[#10b981] font-bold text-sm tracking-widest uppercase">Position Filled</span>
+                  </div>
+                  <p className="text-[10px] text-[#64748b]">Validated via Blockchain Hash: {candidate.id?.substring(0, 12)}...</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
@@ -397,11 +422,11 @@ const HiringWorkflow = () => {
                 </div>
               )}
 
-              {(candidate.stage === "hired" || candidate.stage === "rejected") && (
+              {(candidate.stage === "hired" || candidate.stage === "accepted" || candidate.stage === "rejected") && (
                 <div className="text-center py-6">
-                  <div className="text-4xl mb-4">{candidate.stage === "hired" ? "🎉" : "🛑"}</div>
+                  <div className="text-4xl mb-4">{(candidate.stage === "hired" || candidate.stage === "accepted") ? "🎉" : "🛑"}</div>
                   <h3 className="text-xl font-semibold text-[#f8fafc] mb-2">Workflow Completed</h3>
-                  <p className="text-[#9ca3af]">This application has reached a terminal state ({candidate.stage}).</p>
+                  <p className="text-[#9ca3af]">This application has reached a terminal state ({candidate.stage === "accepted" ? "Hired" : candidate.stage}).</p>
                 </div>
               )}
             </div>
@@ -611,7 +636,7 @@ const HiringWorkflow = () => {
 
             {/* No Extend Offer button since it's inline now */}
 
-            {candidate.stage !== "hired" && candidate.stage !== "rejected" && candidate.stage !== "offer" && (
+            {candidate.stage !== "hired" && candidate.stage !== "accepted" && candidate.stage !== "rejected" && candidate.stage !== "offer" && (
               <button
                 onClick={handleReject}
                 disabled={submitting}
