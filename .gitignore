@@ -1,4 +1,6 @@
+# =========================
 # Logs
+# =========================
 logs
 *.log
 npm-debug.log*
@@ -7,14 +9,61 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+# =========================
+# Environment Variables
+# =========================
+.env
+.env.*
+**/.env
+**/.env.*
+
+# =========================
+# Node & Frontend
+# =========================
+node_modules/
+**/node_modules/
+dist/
+dist-ssr/
+build/
 *.local
 
+# =========================
+# Python & Backend
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+venv/
+env/
+.venv/
+ml/venv/
+backend/venv/
+
+# =========================
+# Database & File Uploads
+# =========================
+uploads/
+**/uploads/
+chroma_data/
+**/chroma_data/
+*.sqlite3
+
+# =========================
+# Blockchain (Hardhat)
+# =========================
+blockchain/artifacts/
+blockchain/cache/
+blockchain/typechain-types/
+blockchain/coverage/
+blockchain/coverage.json
+blockchain/gasReporterOutput.json
+
+# =========================
 # Editor directories and files
+# =========================
 .vscode/*
-!.vscode/extensions.jsons
+!.vscode/extensions.json
 .idea
 .DS_Store
 *.suo
@@ -22,4 +71,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-ml/venv/ 
