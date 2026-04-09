@@ -1,6 +1,6 @@
 # Core API
 fastapi==0.104.1
-uvicorn==0.24.0
+uvicorn[standard]==0.24.0
 python-multipart==0.0.6
 aiofiles==23.2.1
 
@@ -8,9 +8,9 @@ aiofiles==23.2.1
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 
-# Data validation
-pydantic==2.5.0
-pydantic-settings==2.1.0
+# Data validation — updated to latest stable with pre-built wheels for all Python versions
+pydantic==2.7.4
+pydantic-settings==2.3.0
 email-validator==2.1.0.post1
 
 # Database
