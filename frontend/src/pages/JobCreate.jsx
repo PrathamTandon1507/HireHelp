@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useJob } from "../context/JobContext";
+import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
 import DashboardLayout from "./components/DashboardLayout";
 
 const JobCreate = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { createJob } = useJob();
   const { success, error } = useNotification();
   const [submitting, setSubmitting] = useState(false);
@@ -16,10 +18,19 @@ const JobCreate = () => {
     type: "Full-time",
     description: "",
     requirements: "",
+    skills: "",
     responsibilities: "",
     salary: "",
+    companyName: user?.companyName || "",
   });
   const [errors, setErrors] = useState({});
+
+  // Sync company name when user context loads
+  useEffect(() => {
+    if (user?.companyName && !formData.companyName) {
+      setFormData(prev => ({ ...prev, companyName: user.companyName }));
+    }
+  }, [user, formData.companyName]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -34,6 +45,7 @@ const JobCreate = () => {
     if (!formData.title) newErrors.title = "Job title is required";
     if (!formData.department) newErrors.department = "Department is required";
     if (!formData.location) newErrors.location = "Location is required";
+    if (!formData.companyName) newErrors.companyName = "Company name is required";
     if (!formData.description)
       newErrors.description = "Description is required";
 
@@ -46,7 +58,26 @@ const JobCreate = () => {
     if (!validate()) return;
 
     setSubmitting(true);
-    const result = await createJob(formData);
+    
+    // Format data as lists of strings
+    const formattedData = {
+      ...formData,
+      company_name: formData.companyName,
+      requirements: formData.requirements
+        .split("\n")
+        .map((r) => r.trim())
+        .filter((r) => r !== ""),
+      responsibilities: formData.responsibilities
+        .split("\n")
+        .map((r) => r.trim())
+        .filter((r) => r !== ""),
+      skills: formData.skills
+        .split(",")
+        .map((s) => s.trim())
+        .filter((s) => s !== ""),
+    };
+
+    const result = await createJob(formattedData);
     setSubmitting(false);
 
     if (result.success) {
@@ -61,6 +92,9 @@ const JobCreate = () => {
     <DashboardLayout
       title="Create Job Posting"
       subtitle="Post a new position to attract top talent"
+      loading={submitting}
+      loadingMessage="Posting Job"
+      loadingSubtext="Broadcasting your opportunity to top talent..."
     >
       <div className="max-w-4xl">
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -157,6 +191,30 @@ const JobCreate = () => {
 
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-[#e5e7eb] mb-2">
+                    Company Name *
+                  </label>
+                  <input
+                    type="text"
+                    name="companyName"
+                    value={formData.companyName}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-2.5 bg-[#0f172a] border ${
+                      errors.companyName ? "border-[#f59e0b]" : "border-[#334155]"
+                    } rounded-lg text-[#f8fafc] placeholder-[#64748b] focus:outline-none focus:ring-2 focus:ring-[#2563eb] focus:border-transparent transition-all`}
+                    placeholder="e.g., Acme Corp"
+                  />
+                  {errors.companyName && (
+                    <p className="mt-1.5 text-sm text-[#f59e0b]">
+                      {errors.companyName}
+                    </p>
+                  )}
+                  <p className="mt-1.5 text-xs text-[#64748b]">
+                    This will be pre-filled from your profile but can be adjusted for specific listings.
+                  </p>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-[#e5e7eb] mb-2">
                     Salary Range (Optional)
                   </label>
                   <input
@@ -199,6 +257,20 @@ const JobCreate = () => {
                     {errors.description}
                   </p>
                 )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#e5e7eb] mb-2">
+                  Technical Skills (Comma separated)
+                </label>
+                <input
+                  type="text"
+                  name="skills"
+                  value={formData.skills}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2.5 bg-[#0f172a] border border-[#334155] rounded-lg text-[#f8fafc] placeholder-[#64748b] focus:outline-none focus:ring-2 focus:ring-[#2563eb] focus:border-transparent transition-all"
+                  placeholder="e.g. React, Node.js, AWS, Python"
+                />
               </div>
 
               <div>

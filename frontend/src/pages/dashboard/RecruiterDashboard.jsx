@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useJob } from "../../context/JobContext"; // ADD THIS
+import { useJob } from "../../context/JobContext";
+import { api } from "../../services/api";
 import DashboardLayout from "../components/DashboardLayout";
 import StatCard from "../components/StatCard";
 import JobCard from "../components/JobCard";
@@ -8,69 +9,49 @@ import CandidateCard from "../components/CandidateCard";
 
 const RecruiterDashboard = () => {
   const navigate = useNavigate();
-  const { jobs, fetchJobs, loading } = useJob(); // USE CONTEXT
+  const { jobs, fetchJobs, loading: jobsLoading } = useJob();
+  const [stats, setStats] = useState({
+    myJobs: 0,
+    totalApplications: 0,
+    interviews: 0,
+    offers: 0,
+  });
+  const [myJobs, setMyJobs] = useState([]);
+  const [recentCandidates, setRecentCandidates] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchJobs();
+    const loadDashboardData = async () => {
+      try {
+        setLoading(true);
+        
+        // Load stats, candidates, and my jobs
+        const [statsData, candidatesData, myJobsData] = await Promise.all([
+          api.applications.getStats(),
+          api.applications.listMyCandidates(),
+          api.jobs.listMyJobs()
+        ]);
+        
+        setStats(statsData);
+        setRecentCandidates(candidatesData);
+        setMyJobs(myJobsData.slice(0, 2)); // Save top 2
+      } catch (error) {
+        console.error("Failed to load dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboardData();
   }, []);
-
-  const stats = {
-    myJobs: jobs.length,
-    activeCandidates: 28,
-    interviewsScheduled: 7,
-    offersInProgress: 3,
-  };
-
-  const myJobs = jobs.slice(0, 2); // Show first 2 jobs
-
-  // Mock candidates (can be moved to context later)
-  const recentCandidates = [
-    {
-      _id: "1",
-      name: "Sarah Johnson",
-      email: "sarah.j@email.com",
-      stage: "interview",
-      matchScore: 92,
-      skills: ["React", "Node.js", "TypeScript", "MongoDB", "AWS"],
-      appliedAt: "2026-01-16T00:00:00Z",
-    },
-    {
-      _id: "2",
-      name: "Michael Chen",
-      email: "mchen@email.com",
-      stage: "screening",
-      matchScore: 88,
-      skills: ["Python", "Django", "PostgreSQL", "Docker"],
-      appliedAt: "2026-01-17T00:00:00Z",
-    },
-    {
-      _id: "3",
-      name: "Emily Rodriguez",
-      email: "emily.r@email.com",
-      stage: "offer",
-      matchScore: 95,
-      skills: ["Java", "Spring Boot", "Kubernetes", "GraphQL"],
-      appliedAt: "2026-01-15T00:00:00Z",
-    },
-  ];
-
-  if (loading) {
-    return (
-      <DashboardLayout
-        title="Recruiter Dashboard"
-        subtitle="Manage your job postings and candidates"
-      >
-        <div className="flex items-center justify-center h-64">
-          <div className="text-[#9ca3af] font-mono">Loading dashboard...</div>
-        </div>
-      </DashboardLayout>
-    );
-  }
 
   return (
     <DashboardLayout
       title="Recruiter Dashboard"
       subtitle="Manage your job postings and candidates"
+      loading={loading || jobsLoading}
+      loadingMessage="Assembling Your Pipeline"
+      loadingSubtext="Fetching your active jobs and recent candidate applications..."
     >
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -82,8 +63,8 @@ const RecruiterDashboard = () => {
           accentColor="#2563eb"
         />
         <StatCard
-          title="Active Candidates"
-          value={stats.activeCandidates}
+          title="Applications"
+          value={stats.totalApplications}
           subtitle="In pipeline"
           icon="●"
           accentColor="#22d3ee"
@@ -91,14 +72,14 @@ const RecruiterDashboard = () => {
         />
         <StatCard
           title="Interviews"
-          value={stats.interviewsScheduled}
+          value={stats.interviews}
           subtitle="Scheduled"
           icon="◇"
           accentColor="#10b981"
         />
         <StatCard
-          title="Offers"
-          value={stats.offersInProgress}
+          title="Active Offers"
+          value={stats.offers}
           subtitle="In progress"
           icon="✓"
           accentColor="#f59e0b"
@@ -213,7 +194,7 @@ const RecruiterDashboard = () => {
             <CandidateCard
               key={candidate._id}
               candidate={candidate}
-              jobId="1"
+              jobId={candidate.job_id || candidate.jobId}
             />
           ))}
         </div>

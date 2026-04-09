@@ -20,23 +20,13 @@ const AdminDashboard = () => {
 
   const recentJobs = jobs.slice(0, 3); // Show first 3 jobs
 
-  if (loading) {
-    return (
-      <DashboardLayout
-        title="Admin Dashboard"
-        subtitle="System overview and job management"
-      >
-        <div className="flex items-center justify-center h-64">
-          <div className="text-[#9ca3af] font-mono">Loading dashboard...</div>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
   return (
     <DashboardLayout
       title="Admin Dashboard"
       subtitle="System overview and job management"
+      loading={loading}
+      loadingMessage="Synchronizing Core Systems"
+      loadingSubtext="Fetching global job metrics and recent system activity..."
     >
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

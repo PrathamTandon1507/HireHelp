@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import { api } from "../services/api";
 
 const AuthContext = createContext(null);
 
@@ -10,29 +11,11 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem("hirehelp_token");
-      const storedUser = localStorage.getItem("hirehelp_user");
 
-      if (token && storedUser) {
+      if (token) {
         try {
-          // TODO: Uncomment when backend is ready
-          // const response = await fetch('/api/auth/verify', {
-          //   headers: {
-          //     'Authorization': `Bearer ${token}`,
-          //     'Content-Type': 'application/json'
-          //   }
-          // });
-
-          // if (response.ok) {
-          //   const userData = await response. json();
-          //   setUser(userData. user);
-          // } else {
-          //   localStorage.removeItem('hirehelp_token');
-          //   localStorage.removeItem('hirehelp_user');
-          //   setUser(null);
-          // }
-
-          // Mock:  Load user from localStorage
-          setUser(JSON.parse(storedUser));
+          const userData = await api.auth.me();
+          setUser(userData);
         } catch (error) {
           console.error("Auth check failed:", error);
           localStorage.removeItem("hirehelp_token");
@@ -49,33 +32,15 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      // TODO: Uncomment when backend is ready
-      // const response = await fetch('/api/auth/login', {
-      //   method: 'POST',
-      //   headers:  { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email, password })
-      // });
+      const data = await api.auth.login({ email, password });
 
-      // const data = await response.json();
-
-      // if (! response.ok) {
-      //   throw new Error(data.message || 'Login failed');
-      // }
-
-      // Mock login - accept any credentials
-      const mockUser = {
-        _id: "mock-user-id",
-        email: email,
-        fullName: "Demo User",
-        role: "recruiter", // See Admin Dashboard
-      };
-
-      const mockToken = "mock-jwt-token-" + Date.now();
-
-      // Store token and user data
-      localStorage.setItem("hirehelp_token", mockToken);
-      localStorage.setItem("hirehelp_user", JSON.stringify(mockUser));
-      setUser(mockUser);
+      // Store token and initial user info
+      localStorage.setItem("hirehelp_token", data.access_token || data.accessToken);
+      
+      // Fetch full user profile after login
+      const userData = await api.auth.me();
+      localStorage.setItem("hirehelp_user", JSON.stringify(userData));
+      setUser(userData);
 
       return { success: true };
     } catch (error) {
@@ -85,35 +50,16 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (formData) => {
     try {
-      // TODO: Uncomment when backend is ready
-      // const response = await fetch('/api/auth/register', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body:  JSON.stringify(formData)
-      // });
-
-      // const data = await response.json();
-
-      // if (!response.ok) {
-      //   throw new Error(data.message || 'Registration failed');
-      // }
-
-      // Mock registration
-      const mockUser = {
-        _id: "mock-user-id-" + Date.now(),
+      await api.auth.register({
         email: formData.email,
-        fullName: formData.fullName,
+        full_name: formData.fullName,
+        password: formData.password,
         role: formData.role,
-      };
+        company_name: formData.companyName
+      });
 
-      const mockToken = "mock-jwt-token-" + Date.now();
-
-      // Store token and user data
-      localStorage.setItem("hirehelp_token", mockToken);
-      localStorage.setItem("hirehelp_user", JSON.stringify(mockUser));
-      setUser(mockUser);
-
-      return { success: true };
+      // Automatically log in after registration
+      return await login(formData.email, formData.password);
     } catch (error) {
       return { success: false, error: error.message };
     }

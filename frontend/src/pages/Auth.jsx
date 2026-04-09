@@ -13,6 +13,7 @@ const Auth = () => {
     confirmPassword: "",
     role: "applicant",
     fullName: "",
+    companyName: "",
   });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -72,6 +73,9 @@ const Auth = () => {
       if (!formData.fullName) {
         newErrors.fullName = "Full name is required";
       }
+      if (formData.role === "recruiter" && !formData.companyName) {
+        newErrors.companyName = "Company name is required for recruiters";
+      }
       if (formData.password !== formData.confirmPassword) {
         newErrors.confirmPassword = "Passwords do not match";
       }
@@ -97,6 +101,7 @@ const Auth = () => {
             password: formData.password,
             fullName: formData.fullName,
             role: formData.role,
+            companyName: formData.role === "recruiter" ? formData.companyName : undefined,
           });
 
       if (result.success) {
@@ -122,6 +127,7 @@ const Auth = () => {
       confirmPassword: "",
       role: "applicant",
       fullName: "",
+      companyName: "",
     });
   };
 
@@ -362,6 +368,38 @@ const Auth = () => {
                     </label>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Company Name - Recruiter Register Only */}
+            {!isLogin && formData.role === "recruiter" && (
+              <div className="animate-slide-in animation-delay-500">
+                <label
+                  htmlFor="companyName"
+                  className="block text-sm font-semibold text-[#e5e7eb] mb-2.5"
+                >
+                  Company Name
+                </label>
+                <div className="relative group">
+                  <input
+                    type="text"
+                    id="companyName"
+                    name="companyName"
+                    value={formData.companyName}
+                    onChange={handleChange}
+                    className={`w-full px-5 py-3.5 bg-[#0f172a]/60 border ${
+                      errors.companyName ? "border-[#f59e0b]" : "border-[#334155]"
+                    } rounded-xl text-[#f8fafc] placeholder-[#64748b] focus:outline-none focus:ring-2 focus:ring-[#2563eb] focus:border-transparent transition-all duration-300 hover:border-[#475569] backdrop-blur-sm group-hover:bg-[#0f172a]/80`}
+                    placeholder="Enter your company name"
+                  />
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-[#2563eb]/0 via-[#2563eb]/5 to-[#2563eb]/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                </div>
+                {errors.companyName && (
+                  <p className="mt-2 text-sm text-[#f59e0b] flex items-center gap-1.5 animate-shake">
+                    <span>⚠️</span>
+                    {errors.companyName}
+                  </p>
+                )}
               </div>
             )}
 

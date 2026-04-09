@@ -1,7 +1,9 @@
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 const JobCard = ({ job, showActions = false, actionType = "view" }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   // Safety check
   if (!job) {
@@ -41,9 +43,12 @@ const JobCard = ({ job, showActions = false, actionType = "view" }) => {
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-[#f8fafc] mb-2 group-hover:text-[#22d3ee] transition-colors">
+            <h3 className="text-lg font-semibold text-[#f8fafc] mb-1 group-hover:text-[#22d3ee] transition-colors">
               {job.title || "Untitled Position"}
             </h3>
+            <p className="text-[#10b981] font-medium text-sm mb-1">
+              {job.companyName || "Independent"}
+            </p>
             <p className="text-sm text-[#9ca3af] mb-3">
               {job.department || "No department"}
             </p>
@@ -96,12 +101,15 @@ const JobCard = ({ job, showActions = false, actionType = "view" }) => {
                 >
                   View Details
                 </button>
+                {/* Only render shortlist button for admins, or recruiters belonging to the parent company */}
+                {(user?.role === "admin" || (user?.role === "recruiter" && user?.companyName === (job.companyName || "Independent"))) && (
                 <button
                   onClick={() => navigate(`/jobs/${job._id}/shortlist`)}
                   className="px-4 py-2 bg-[#0f172a] border border-[#334155] text-[#e5e7eb] text-sm font-medium rounded-lg hover:border-[#475569] hover:bg-[#1e293b] transition-all duration-200"
                 >
                   Shortlist
                 </button>
+                )}
               </>
             )}
             {actionType === "apply" && (

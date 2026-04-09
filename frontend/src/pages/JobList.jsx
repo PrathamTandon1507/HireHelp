@@ -37,6 +37,9 @@ const JobList = () => {
           ? "Find your next opportunity"
           : "Manage job postings and applications"
       }
+      loading={loading}
+      loadingMessage="Finding Opportunities"
+      loadingSubtext="Scanning our network for the best active roles..."
     >
       {/* Filters */}
       <div className="mb-8 relative rounded-xl bg-gradient-to-br from-[#1e293b]/80 to-[#0f172a]/80 border border-[#334155]/40 overflow-hidden shadow-lg shadow-black/20 p-6">
@@ -94,15 +97,11 @@ const JobList = () => {
       )}
 
       {/* Job Listings */}
-      {loading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="text-[#9ca3af] font-mono">Loading jobs...</div>
-        </div>
-      ) : filteredJobs.length === 0 ? (
+      {filteredJobs.length === 0 && !loading ? (
         <div className="relative rounded-xl bg-gradient-to-br from-[#1e293b]/80 to-[#0f172a]/80 border border-[#334155]/40 p-12 text-center">
           <p className="text-[#9ca3af]">No jobs found matching your criteria</p>
         </div>
-      ) : (
+      ) : !loading && (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredJobs.map((job) => (
             <JobCard

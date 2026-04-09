@@ -14,6 +14,8 @@ import JobList from "./pages/JobList";
 import ApplicantProfile from "./pages/ApplicantProfile";
 import CandidateShortlist from "./pages/CandidateShortlist";
 import HiringWorkflow from "./pages/HiringWorkflow";
+import OfferReview from "./pages/OfferReview";
+import MyApplications from "./pages/MyApplications";
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -102,12 +104,28 @@ function App() {
                 }
               />
 
-              {/* Applicant Profile Route */}
+              {/* Applicant Profile & Offer Route */}
               <Route
                 path="/profile"
                 element={
                   <ProtectedRoute allowedRoles={["applicant"]}>
                     <ApplicantProfile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/my-applications"
+                element={
+                  <ProtectedRoute allowedRoles={["applicant"]}>
+                    <MyApplications />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/applications/:applicationId/offer"
+                element={
+                  <ProtectedRoute allowedRoles={["applicant"]}>
+                    <OfferReview />
                   </ProtectedRoute>
                 }
               />

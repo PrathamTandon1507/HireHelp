@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useNotification } from "../context/NotificationContext";
+import { api } from "../services/api";
 import DashboardLayout from "./components/DashboardLayout";
 import CandidateCard from "./components/CandidateCard";
+import AIAnalysisDisplay from "./components/AIAnalysisDisplay";
 
 const CandidateShortlist = () => {
   const { jobId } = useParams();
   const navigate = useNavigate();
-  const { success, info } = useNotification();
+  const { success, error, info } = useNotification();
   const [loading, setLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [candidates, setCandidates] = useState([]);
@@ -20,119 +22,83 @@ const CandidateShortlist = () => {
 
   const fetchCandidates = async () => {
     setLoading(true);
-    // TODO: Fetch from backend
-    // const response = await fetch(`/api/jobs/${jobId}/candidates`);
-
-    // Mock data
-    setTimeout(() => {
-      setCandidates([
-        {
-          _id: "1",
-          name: "Sarah Johnson",
-          email: "sarah.j@email.com",
-          stage: "applied",
-          matchScore: 92,
-          skills: ["React", "Node.js", "TypeScript", "MongoDB", "AWS"],
-          appliedAt: "2026-01-16T00:00:00Z",
-        },
-        {
-          _id: "2",
-          name: "Michael Chen",
-          email: "mchen@email.com",
-          stage: "applied",
-          matchScore: 88,
-          skills: ["Python", "Django", "PostgreSQL", "Docker", "Redis"],
-          appliedAt: "2026-01-17T00:00:00Z",
-        },
-        {
-          _id: "3",
-          name: "Emily Rodriguez",
-          email: "emily.r@email.com",
-          stage: "applied",
-          matchScore: 95,
-          skills: [
-            "Java",
-            "Spring Boot",
-            "Kubernetes",
-            "GraphQL",
-            "Microservices",
-          ],
-          appliedAt: "2026-01-15T00:00:00Z",
-        },
-        {
-          _id: "4",
-          name: "David Kim",
-          email: "dkim@email.com",
-          stage: "applied",
-          matchScore: 85,
-          skills: ["JavaScript", "Vue.js", "Express", "MySQL"],
-          appliedAt: "2026-01-18T00:00:00Z",
-        },
-      ]);
+    try {
+      const data = await api.applications.listForJob(jobId);
+      // Map API response to frontend candidate format — no hardcoded fallbacks
+      const formatted = data.map((app) => ({
+        _id: app._id,
+        applicationId: app._id,
+        jobId: app.jobId || jobId,
+        name: app.applicantName || "Unknown",
+        email: app.applicantEmail || "",
+        phone: app.phone || null,
+        location: app.location || null,
+        skills: Array.isArray(app.skills) ? app.skills : [],
+        stage: app.stage,
+        matchScore: typeof app.aiMatchScore === "number" ? app.aiMatchScore : 0,
+        resumeUrl: app.resumeUrl || null,
+        interviewFeedback: app.interviewFeedback || null,
+        feedbackHistory: Array.isArray(app.feedbackHistory) ? app.feedbackHistory : [],
+        appliedAt: app.createdAt,
+      }));
+      setCandidates(formatted);
+    } catch (err) {
+      error("Failed to load candidates: " + (err.message || ""));
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   const handleAIAnalysis = async (candidate) => {
     setAnalyzing(true);
     setSelectedCandidate(candidate);
+    setAiInsights(null);
 
-    // TODO: Call Python ML/RAG service
-    // const response = await fetch('/api/ai/analyze-candidate', {
-    //   method: 'POST',
-    //   body: JSON.stringify({ jobId, candidateId: candidate._id })
-    // });
+    try {
+      const result = await api.ai.explain(candidate._id);
 
-    // Mock AI analysis
-    setTimeout(() => {
       setAiInsights({
-        summary: `Strong candidate with ${candidate.matchScore}% match to job requirements. Demonstrates solid technical foundation and relevant experience.`,
-        strengths: [
-          "Extensive experience with required tech stack",
-          "Strong problem-solving capabilities",
-          "Excellent communication skills based on application",
-          "Relevant project experience",
-        ],
-        skillGaps: [
-          {
-            skill: "Kubernetes",
-            severity: "medium",
-            note: "Listed in job requirements but not in resume",
-          },
-          {
-            skill: "CI/CD pipelines",
-            severity: "low",
-            note: "Would strengthen deployment knowledge",
-          },
-        ],
-        interviewQuestions: [
-          "Can you describe your experience building scalable microservices architectures?",
-          "Walk me through how you would optimize a slow database query in production.",
-          "Tell me about a time you had to debug a complex distributed system issue.",
-          "How do you approach code reviews and ensuring code quality in a team?",
-          "What strategies do you use for handling technical debt?",
-        ],
+        summary: typeof result.explanation === "string" ? result.explanation : JSON.stringify(result.explanation) || "Analysis completed.",
+        skillGaps: Array.isArray(result.skillGaps)
+          ? result.skillGaps.map((g) => ({
+              skill: typeof g === "string" ? g : g.skill || String(g),
+              severity: g.severity || "medium",
+              note: g.note || "Identified from resume analysis",
+            }))
+          : [],
+        interviewQuestions: Array.isArray(result.interviewQuestions)
+          ? result.interviewQuestions.map((q) =>
+              typeof q === "string" ? q : String(q)
+            )
+          : ["Tell me about your experience with this tech stack."],
+        matchScore: result.matchScore ?? candidate.matchScore,
       });
-      setAnalyzing(false);
       success("AI analysis completed!");
-    }, 2000);
+    } catch (err) {
+      error("AI analysis failed: " + (err.message || "Unknown error"));
+    } finally {
+      setAnalyzing(false);
+    }
   };
 
   const sortedCandidates = [...candidates].sort(
-    (a, b) => b.matchScore - a.matchScore,
+    (a, b) => b.matchScore - a.matchScore
   );
 
   return (
     <DashboardLayout
       title="Candidate Shortlist"
       subtitle="AI-powered candidate ranking and insights"
+      loading={loading || analyzing}
+      loadingMessage={loading ? "Shortlisting Candidates" : "AI Generating Insights"}
+      loadingSubtext={loading ? "Parsing applications and ranking by match score..." : "Our AI is analyzing the resume against the job description..."}
     >
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Candidates List */}
         <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-[#f8fafc]">
-              {candidates.length} Candidates
+              {candidates.length} Candidate{candidates.length !== 1 ? "s" : ""}
             </h2>
             <button
               onClick={() =>
@@ -166,7 +132,8 @@ const CandidateShortlist = () => {
                     <CandidateCard candidate={candidate} jobId={jobId} />
                     <button
                       onClick={() => handleAIAnalysis(candidate)}
-                      className="mt-3 w-full px-4 py-2 bg-gradient-to-r from-[#22d3ee] to-[#06b6d4] text-[#f8fafc] text-sm font-medium rounded-lg hover:shadow-lg hover:shadow-[#22d3ee]/20 transition-all duration-200 hover:scale-[1.01]"
+                      disabled={analyzing && selectedCandidate?._id === candidate._id}
+                      className="mt-3 w-full px-4 py-2 bg-gradient-to-r from-[#22d3ee] to-[#06b6d4] text-[#f8fafc] text-sm font-medium rounded-lg hover:shadow-lg hover:shadow-[#22d3ee]/20 transition-all duration-200 hover:scale-[1.01] disabled:opacity-60"
                     >
                       🤖 Generate AI Insights
                     </button>
@@ -181,7 +148,7 @@ const CandidateShortlist = () => {
         <div className="space-y-6">
           {!selectedCandidate ? (
             <div className="relative rounded-xl bg-gradient-to-br from-[#1e293b]/80 to-[#0f172a]/80 border border-[#334155]/40 overflow-hidden shadow-lg shadow-black/20 p-8 text-center">
-              <div className="absolute inset-0 bg-gradient-to-br from-[#22d3ee]/5 to-transparent"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-[#22d3ee]/5 to-transparent" />
               <div className="relative">
                 <div className="text-5xl mb-4">🤖</div>
                 <h3 className="text-lg font-semibold text-[#f8fafc] mb-2">
@@ -195,7 +162,7 @@ const CandidateShortlist = () => {
             </div>
           ) : analyzing ? (
             <div className="relative rounded-xl bg-gradient-to-br from-[#1e293b]/80 to-[#0f172a]/80 border border-[#334155]/40 overflow-hidden shadow-lg shadow-black/20 p-8 text-center">
-              <div className="absolute inset-0 bg-gradient-to-br from-[#22d3ee]/10 to-transparent animate-pulse"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-[#22d3ee]/10 to-transparent animate-pulse" />
               <div className="relative">
                 <div className="text-5xl mb-4 animate-bounce">🤖</div>
                 <h3 className="text-lg font-semibold text-[#f8fafc] mb-2">
@@ -206,105 +173,86 @@ const CandidateShortlist = () => {
                 </p>
               </div>
             </div>
-          ) : (
+          ) : aiInsights ? (
             <>
               {/* Summary */}
               <div className="relative rounded-xl bg-gradient-to-br from-[#1e293b]/80 to-[#0f172a]/80 border border-[#22d3ee]/40 overflow-hidden shadow-lg shadow-black/20 p-6">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#22d3ee]/10 to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-[#22d3ee]/10 to-transparent" />
                 <div className="relative">
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-xl">🤖</span>
                     <h3 className="text-base font-semibold text-[#f8fafc]">
-                      AI Analysis
+                      AI Analysis — {selectedCandidate.name}
                     </h3>
                   </div>
-                  <p className="text-sm text-[#cbd5e1] leading-relaxed">
-                    {aiInsights?.summary}
-                  </p>
-                </div>
-              </div>
-
-              {/* Strengths */}
-              <div className="relative rounded-xl bg-gradient-to-br from-[#1e293b]/80 to-[#0f172a]/80 border border-[#10b981]/40 overflow-hidden shadow-lg shadow-black/20 p-6">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#10b981]/10 to-transparent"></div>
-                <div className="relative">
-                  <h3 className="text-base font-semibold text-[#f8fafc] mb-3">
-                    Key Strengths
-                  </h3>
-                  <ul className="space-y-2">
-                    {aiInsights?.strengths.map((strength, idx) => (
-                      <li
-                        key={idx}
-                        className="flex items-start gap-2 text-sm text-[#cbd5e1]"
-                      >
-                        <span className="text-[#10b981] mt-0.5">✓</span>
-                        <span>{strength}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <AIAnalysisDisplay text={aiInsights.summary} />
                 </div>
               </div>
 
               {/* Skill Gaps */}
-              <div className="relative rounded-xl bg-gradient-to-br from-[#1e293b]/80 to-[#0f172a]/80 border border-[#f59e0b]/40 overflow-hidden shadow-lg shadow-black/20 p-6">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#f59e0b]/10 to-transparent"></div>
-                <div className="relative">
-                  <h3 className="text-base font-semibold text-[#f8fafc] mb-3">
-                    Skill Gaps
-                  </h3>
-                  <div className="space-y-3">
-                    {aiInsights?.skillGaps.map((gap, idx) => (
-                      <div
-                        key={idx}
-                        className="p-3 rounded-lg bg-[#0f172a]/60 border border-[#334155]/40"
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium text-[#f8fafc]">
-                            {gap.skill}
-                          </span>
-                          <span
-                            className={`text-xs font-mono px-2 py-0.5 rounded ${
-                              gap.severity === "high"
-                                ? "bg-[#b91c1c]/20 text-[#b91c1c]"
-                                : gap.severity === "medium"
-                                ? "bg-[#f59e0b]/20 text-[#f59e0b]"
-                                : "bg-[#64748b]/20 text-[#64748b]"
-                            }`}
-                          >
-                            {gap.severity}
-                          </span>
+              {aiInsights.skillGaps.length > 0 && (
+                <div className="relative rounded-xl bg-gradient-to-br from-[#1e293b]/80 to-[#0f172a]/80 border border-[#f59e0b]/40 overflow-hidden shadow-lg shadow-black/20 p-6">
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#f59e0b]/10 to-transparent" />
+                  <div className="relative">
+                    <h3 className="text-base font-semibold text-[#f8fafc] mb-3">
+                      Skill Gaps
+                    </h3>
+                    <div className="space-y-3">
+                      {aiInsights.skillGaps.map((gap, idx) => (
+                        <div
+                          key={idx}
+                          className="p-3 rounded-lg bg-[#0f172a]/60 border border-[#334155]/40"
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-medium text-[#f8fafc]">
+                              {gap.skill}
+                            </span>
+                            <span
+                              className={`text-xs font-mono px-2 py-0.5 rounded ${
+                                gap.severity === "high"
+                                  ? "bg-[#b91c1c]/20 text-[#b91c1c]"
+                                  : gap.severity === "medium"
+                                  ? "bg-[#f59e0b]/20 text-[#f59e0b]"
+                                  : "bg-[#64748b]/20 text-[#64748b]"
+                              }`}
+                            >
+                              {gap.severity}
+                            </span>
+                          </div>
+                          <p className="text-xs text-[#9ca3af]">{gap.note}</p>
                         </div>
-                        <p className="text-xs text-[#9ca3af]">{gap.note}</p>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Interview Questions */}
-              <div className="relative rounded-xl bg-gradient-to-br from-[#1e293b]/80 to-[#0f172a]/80 border border-[#2563eb]/40 overflow-hidden shadow-lg shadow-black/20 p-6">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#2563eb]/10 to-transparent"></div>
-                <div className="relative">
-                  <h3 className="text-base font-semibold text-[#f8fafc] mb-3">
-                    Suggested Interview Questions
-                  </h3>
-                  <ol className="space-y-3">
-                    {aiInsights?.interviewQuestions.map((question, idx) => (
-                      <li
-                        key={idx}
-                        className="flex gap-3 text-sm text-[#cbd5e1]"
-                      >
-                        <span className="text-[#22d3ee] font-mono font-semibold">
-                          {idx + 1}.
-                        </span>
-                        <span>{question}</span>
-                      </li>
-                    ))}
-                  </ol>
+              {aiInsights.interviewQuestions.length > 0 && (
+                <div className="relative rounded-xl bg-gradient-to-br from-[#1e293b]/80 to-[#0f172a]/80 border border-[#2563eb]/40 overflow-hidden shadow-lg shadow-black/20 p-6">
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#2563eb]/10 to-transparent" />
+                  <div className="relative">
+                    <h3 className="text-base font-semibold text-[#f8fafc] mb-3">
+                      Suggested Interview Questions
+                    </h3>
+                    <ol className="space-y-3">
+                      {aiInsights.interviewQuestions.map((question, idx) => (
+                        <li
+                          key={idx}
+                          className="flex gap-3 text-sm text-[#cbd5e1]"
+                        >
+                          <span className="text-[#22d3ee] font-mono font-semibold shrink-0">
+                            {idx + 1}.
+                          </span>
+                          <span>{question}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
                 </div>
-              </div>
+              )}
             </>
-          )}
+          ) : null}
         </div>
       </div>
     </DashboardLayout>

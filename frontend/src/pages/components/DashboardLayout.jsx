@@ -1,7 +1,8 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import LoadingOverlay from "./LoadingOverlay";
 
-const DashboardLayout = ({ children, title, subtitle }) => {
+const DashboardLayout = ({ children, title, subtitle, loading = false, loadingMessage, loadingSubtext }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
@@ -105,6 +106,9 @@ const DashboardLayout = ({ children, title, subtitle }) => {
         {/* Content */}
         <main className="p-8">{children}</main>
       </div>
+
+      {/* Global Loader */}
+      {loading && <LoadingOverlay message={loadingMessage} subtext={loadingSubtext} />}
 
       {/* CSS for custom animations */}
       <style>{`
