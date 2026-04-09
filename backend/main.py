@@ -11,9 +11,9 @@ try:
     # passlib looks for bcrypt.__about__.__version__ which was removed in 4.0
     if not hasattr(bcrypt, "__about__"):
         bcrypt.__about__ = type("About", (), {"__version__": bcrypt.__version__})
-    print("✓ Passlib/Bcrypt compatibility patch applied")
+    print("[OK] Passlib/Bcrypt compatibility patch applied")
 except ImportError:
-    print("⚠️ Bcrypt not found, skipping compatibility patch")
+    print("[WARN] Bcrypt not found, skipping compatibility patch")
 
 # Set up PYTHONPATH at the earliest possible moment
 backend_dir = os.path.dirname(os.path.abspath(__file__))
@@ -44,15 +44,15 @@ async def lifespan(app: FastAPI):
     )
     # RAG/AI models are initialized lazily on first request via get_rag_analyzer() fallback
     # DO NOT block startup with model loading — Render will timeout waiting for the port
-    print("✓ MongoDB client created")
-    print("✓ Server ready — AI models will load on first request")
+    print("[OK] MongoDB client created")
+    print("[OK] Server ready — AI models will load on first request")
 
     yield  # <-- Port opens HERE immediately
 
     # Shutdown
     if db.client:
         db.client.close()
-        print("✓ Disconnected from MongoDB")
+        print("[OK] Disconnected from MongoDB")
 
 app = FastAPI(
     title=settings.app_name,

@@ -150,9 +150,9 @@ class NotificationResponse(BaseModel):
     recipient_id: str
     sender_id: str
     message: str
-    type: str
+    type: str = "info"
     link: Optional[str] = None
-    is_read: bool
+    is_read: bool = False
     created_at: datetime
     
     model_config = {"populate_by_name": True}
