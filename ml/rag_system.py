@@ -241,11 +241,11 @@ async def analyze_application(
     Async wrapper for backend integration.
     Runs the blocking AI logic in a separate thread to prevent event loop freeze.
     """
-    import anyio
+    import asyncio
     analyzer = get_rag_analyzer()
     
     # Offload blocking AI processing to a thread
-    output = await anyio.to_thread.run_sync(
+    output = await asyncio.to_thread(
         analyzer.analyze_candidate, application_id, job, candidate
     )
     
