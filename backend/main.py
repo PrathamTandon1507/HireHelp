@@ -44,8 +44,17 @@ async def lifespan(app: FastAPI):
         settings.mongodb_url,
         serverSelectionTimeoutMS=5000
     )
+    # Initialize RAG system and load models eagerly to prevent first-hit timeout
+    from ml.rag_system import initialize_rag
+    initialize_rag(settings.groq_api_key)
+    
+    # Warm up semantic model (triggers download/load if not present)
+    from ml.rag_system import get_rag_analyzer
+    analyzer = get_rag_analyzer()
+    _ = analyzer.vector_store.model.encode(["warmup"]) 
+    
     print("✓ MongoDB client created")
-    print("✓ RAG system will lazy-load on first request")
+    print("✓ RAG system and ML models loaded eagerly")
 
     yield  # <-- Port opens HERE immediately
 

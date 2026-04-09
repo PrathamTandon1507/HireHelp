@@ -169,7 +169,7 @@ The 'analysis_report' MUST follow this EXACT format with STRENGTHS and IMPROVEME
                 skill_gaps=list(result.get("skill_gaps", []))[:10],
                 interview_questions=list(result.get("interview_questions", []))[:4]
             )
-                  logger.info(f"Analysis complete for {application_id}: score={output.match_score}")
+            logger.info(f"Analysis complete for {application_id}: score={output.match_score}")
             return output
             
         except json.JSONDecodeError as e:
@@ -239,10 +239,15 @@ async def analyze_application(
 ) -> dict:
     """
     Async wrapper for backend integration.
-    Returns dict ready for MongoDB persistence.
+    Runs the blocking AI logic in a separate thread to prevent event loop freeze.
     """
+    import anyio
     analyzer = get_rag_analyzer()
-    output = analyzer.analyze_candidate(application_id, job, candidate)
+    
+    # Offload blocking AI processing to a thread
+    output = await anyio.to_thread.run_sync(
+        analyzer.analyze_candidate, application_id, job, candidate
+    )
     
     return {
         "ai_match_score": output.match_score,
