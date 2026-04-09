@@ -32,7 +32,7 @@ from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from core.config import settings
 from core.database import db, get_db
 
-from api import auth, jobs, applications, ai_analysis, workflow, audit
+from api import auth, jobs, applications, ai_analysis, workflow, audit, notifications
 import asyncio
 
 @asynccontextmanager
@@ -77,6 +77,7 @@ app.include_router(applications.router)
 app.include_router(ai_analysis.router)
 app.include_router(workflow.router)
 app.include_router(audit.router)
+app.include_router(notifications.router)
 
 # Ensure uploads directory exists and mount it
 os.makedirs("uploads", exist_ok=True)

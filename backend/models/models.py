@@ -217,3 +217,35 @@ class AuditLog:
             "blockchain_tx": self.blockchain_tx,
             "created_at": self.created_at,
         }
+
+class Notification:
+    def __init__(
+        self,
+        recipient_id: str,
+        sender_id: str,
+        message: str,
+        type: str = "info",
+        link: Optional[str] = None,
+        is_read: bool = False,
+        created_at: datetime = None,
+        _id: Optional[str] = None,
+    ):
+        self._id = _id
+        self.recipient_id = recipient_id
+        self.sender_id = sender_id
+        self.message = message
+        self.type = type
+        self.link = link
+        self.is_read = is_read
+        self.created_at = created_at or datetime.utcnow()
+    
+    def to_dict(self):
+        return {
+            "recipient_id": self.recipient_id,
+            "sender_id": self.sender_id,
+            "message": self.message,
+            "type": self.type,
+            "link": self.link,
+            "is_read": self.is_read,
+            "created_at": self.created_at,
+        }

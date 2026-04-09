@@ -144,3 +144,15 @@ class AuditResponse(BaseModel):
     decision_hash: str
     blockchain_tx: Optional[str]
     created_at: datetime
+
+class NotificationResponse(BaseModel):
+    id: str = Field(alias="_id")
+    recipient_id: str
+    sender_id: str
+    message: str
+    type: str
+    link: Optional[str] = None
+    is_read: bool
+    created_at: datetime
+    
+    model_config = {"populate_by_name": True}

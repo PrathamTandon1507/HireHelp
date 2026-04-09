@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from typing import Optional
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from models.schemas import ApplicationCreate, ApplicationResponse, WorkflowTransition
-from models.models import Application, ApplicationStage
+from models.models import Application, ApplicationStage, Notification
+from crud.notification import create_notification
 from crud.application import (
     create_application,
     get_application_by_id,
@@ -376,6 +377,19 @@ async def accept_offer(
         raise HTTPException(status_code=400, detail="Cannot accept. This application is not in the offer stage.")
         
     await update_application_stage(db, app_id, ApplicationStage.ACCEPTED, "Candidate accepted the offer")
+    
+    # Notify recruiter
+    job = await get_job_by_id(db, app["job_id"])
+    if job:
+        notif = Notification(
+            recipient_id=job["posted_by"],
+            sender_id=current_user["user_id"],
+            message=f"Candidate {current_user['fullName']} has ACCEPTED the offer for {job['title']}.",
+            type="success",
+            link=f"/jobs/{job['_id']}/candidates/{app_id}"
+        )
+        await create_notification(db, notif)
+        
     return {"message": "Offer accepted"}
 
 @router.post("/action/{app_id}/reject-offer")
