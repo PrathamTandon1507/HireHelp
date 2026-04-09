@@ -86,6 +86,16 @@ async def apply_for_job(
     
     # Note: Legacy vector store indexing skipped in favor of Advanced RAG (ml/rag_system.py)
     
+    # Pre-define safe defaults — ensures return always has valid data even if RAG fails
+    analysis_results = {
+        "ai_match_score": 0,
+        "ai_explanation": "AI Analysis is processing.",
+        "ai_pros": [],
+        "ai_cons": [],
+        "ai_skill_gaps": [],
+        "ai_interview_questions": []
+    }
+
     # Trigger Advanced RAG match analysis (FAISS + Groq)
     try:
         from ml.rag_system import analyze_application
@@ -115,16 +125,13 @@ async def apply_for_job(
             candidate_model
         )
         
-        from crud.application import update_application
-        await update_application(db, str(created_app["_id"]), analysis_results)
     except Exception as e:
         print(f"RAG Analysis failed for {created_app['_id']}: {e}")
-        # Fallback to basic fields if RAG fails completely
-        from crud.application import update_application
-        await update_application(db, str(created_app["_id"]), {
-            "ai_match_score": 0,
-            "ai_explanation": "AI Analysis currently unavailable."
-        })
+        analysis_results["ai_explanation"] = "AI Analysis currently unavailable."
+
+    # Always persist whatever we have (success or fallback)
+    from crud.application import update_application
+    await update_application(db, str(created_app["_id"]), analysis_results)
     
     return {
         "_id": str(created_app["_id"]),

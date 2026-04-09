@@ -35,8 +35,6 @@ from core.database import db, get_db
 from api import auth, jobs, applications, ai_analysis, workflow, audit
 import asyncio
 
-import asyncio
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Create MongoDB client instantly (non-blocking)
@@ -44,23 +42,10 @@ async def lifespan(app: FastAPI):
         settings.mongodb_url,
         serverSelectionTimeoutMS=5000
     )
-    # Initialize RAG and models in the background so the server can START immediately
-    async def load_ai_models():
-        try:
-            from ml.rag_system import initialize_rag, get_rag_analyzer
-            import asyncio
-            # Initialize singleton
-            initialize_rag(settings.groq_api_key)
-            analyzer = get_rag_analyzer()
-            # Warm up in a thread to keep event loop free
-            await asyncio.to_thread(analyzer.vector_store.model.encode, ["warmup"])
-            print("✓ AI Models loaded in background")
-        except Exception as e:
-            print(f"⚠️ AI Background loading failed: {e}")
-
-    asyncio.create_task(load_ai_models())
-    
+    # RAG/AI models are initialized lazily on first request via get_rag_analyzer() fallback
+    # DO NOT block startup with model loading — Render will timeout waiting for the port
     print("✓ MongoDB client created")
+    print("✓ Server ready — AI models will load on first request")
 
     yield  # <-- Port opens HERE immediately
 
