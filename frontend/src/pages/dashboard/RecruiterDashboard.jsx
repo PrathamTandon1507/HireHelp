@@ -144,7 +144,10 @@ const RecruiterDashboard = () => {
               </div>
             </button>
 
-            <button className="w-full p-6 rounded-xl bg-gradient-to-br from-[#10b981]/20 to-[#14b8a6]/10 border border-[#10b981]/30 hover:border-[#10b981]/50 transition-all duration-300 group text-left shadow-lg shadow-black/20">
+            <button 
+              onClick={() => navigate("/jobs")}
+              className="w-full p-6 rounded-xl bg-gradient-to-br from-[#10b981]/20 to-[#14b8a6]/10 border border-[#10b981]/30 hover:border-[#10b981]/50 transition-all duration-300 group text-left shadow-lg shadow-black/20"
+            >
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-[#10b981] to-[#14b8a6] flex items-center justify-center text-xl shadow-lg shadow-[#10b981]/20 group-hover:scale-110 transition-transform">
                   ⚡
@@ -179,24 +182,34 @@ const RecruiterDashboard = () => {
         </div>
       </div>
 
-      {/* Recent Candidates */}
+      {/* Top Ranked Candidates */}
       <div>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-[#f8fafc]">
-            Recent Candidates
+            Top Ranked Candidates
           </h2>
-          <button className="px-4 py-2 text-sm font-medium text-[#22d3ee] hover:text-[#f8fafc] transition-colors">
-            View all →
+          <button 
+            onClick={() => navigate("/jobs")}
+            className="px-4 py-2 text-sm font-medium text-[#22d3ee] hover:text-[#f8fafc] transition-colors"
+          >
+            Manage Pipeline →
           </button>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {recentCandidates.map((candidate) => (
-            <CandidateCard
-              key={candidate._id}
-              candidate={candidate}
-              jobId={candidate.job_id || candidate.jobId}
-            />
-          ))}
+          {recentCandidates
+            .map(c => ({
+              ...c,
+              matchScore: typeof c.ai_match_score === "number" ? c.ai_match_score : (typeof c.matchScore === "number" ? c.matchScore : 0)
+            }))
+            .sort((a, b) => b.matchScore - a.matchScore)
+            .map((candidate, index) => (
+              <CandidateCard
+                key={candidate._id}
+                candidate={candidate}
+                jobId={candidate.job_id || candidate.jobId}
+                rank={index + 1}
+              />
+            ))}
         </div>
       </div>
     </DashboardLayout>

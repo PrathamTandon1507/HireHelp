@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 
-const CandidateCard = ({ candidate, jobId }) => {
+const CandidateCard = ({ candidate, jobId, rank }) => {
   const navigate = useNavigate();
 
   if (!candidate) return null;
@@ -17,10 +17,9 @@ const CandidateCard = ({ candidate, jobId }) => {
   const stage = stageConfig[candidate.stage] || stageConfig.applied;
 
   // Resolve the actual job ID to use for navigation
-  // candidate.jobId comes from the API; jobId prop is a fallback from the parent
   const resolvedJobId = candidate.jobId || jobId;
 
-  // Build resume URL — strip leading "uploads/" if present since vite proxy handles it
+  // Build resume URL
   const resumeUrl = candidate.resumeUrl
     ? `/uploads/${candidate.resumeUrl.replace(/^uploads[\/\\]/, "")}`
     : null;
@@ -38,8 +37,26 @@ const CandidateCard = ({ candidate, jobId }) => {
     window.open(resumeUrl, "_blank", "noopener,noreferrer");
   };
 
+  // Rank Badge Config
+  const getRankConfig = (r) => {
+    if (!r) return null;
+    if (r === 1) return { color: "from-[#f59e0b] to-[#fbbf24]", shadow: "shadow-[#f59e0b]/30", icon: "🏆" };
+    if (r === 2) return { color: "from-[#94a3b8] to-[#cbd5e1]", shadow: "shadow-[#94a3b8]/30", icon: "🥈" };
+    if (r === 3) return { color: "from-[#b45309] to-[#d97706]", shadow: "shadow-[#b45309]/30", icon: "🥉" };
+    return { color: "from-[#1e293b] to-[#334155]", shadow: "shadow-black/20", icon: `#${r}` };
+  };
+
+  const rankConfig = getRankConfig(rank);
+
   return (
     <div className="relative rounded-xl bg-gradient-to-br from-[#1e293b]/80 to-[#0f172a]/80 border border-[#334155]/40 overflow-hidden group hover:border-[#475569]/60 transition-all duration-300 shadow-lg shadow-black/20">
+      {/* Rank Badge */}
+      {rankConfig && (
+        <div className={`absolute -left-1 -top-1 z-20 w-10 h-10 rounded-br-2xl bg-gradient-to-br ${rankConfig.color} flex items-center justify-center text-[#f8fafc] font-bold text-xs shadow-lg ${rankConfig.shadow} border-r border-b border-white/10`}>
+          {rankConfig.icon}
+        </div>
+      )}
+
       {/* Hover glow */}
       <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 

@@ -123,21 +123,19 @@ const CandidateShortlist = () => {
           ) : (
             <div className="space-y-4">
               {sortedCandidates.map((candidate, index) => (
-                <div key={candidate._id} className="relative">
-                  {/* Rank Badge */}
-                  <div className="absolute -left-3 top-6 z-10 w-8 h-8 rounded-full bg-gradient-to-br from-[#2563eb] to-[#3b82f6] flex items-center justify-center text-[#f8fafc] font-bold text-sm shadow-lg shadow-[#2563eb]/30">
-                    {index + 1}
-                  </div>
-                  <div className="pl-8">
-                    <CandidateCard candidate={candidate} jobId={jobId} />
-                    <button
-                      onClick={() => handleAIAnalysis(candidate)}
-                      disabled={analyzing && selectedCandidate?._id === candidate._id}
-                      className="mt-3 w-full px-4 py-2 bg-gradient-to-r from-[#22d3ee] to-[#06b6d4] text-[#f8fafc] text-sm font-medium rounded-lg hover:shadow-lg hover:shadow-[#22d3ee]/20 transition-all duration-200 hover:scale-[1.01] disabled:opacity-60"
-                    >
-                      🤖 Generate AI Insights
-                    </button>
-                  </div>
+                <div key={candidate._id}>
+                  <CandidateCard 
+                    candidate={candidate} 
+                    jobId={jobId} 
+                    rank={index + 1}
+                  />
+                  <button
+                    onClick={() => handleAIAnalysis(candidate)}
+                    disabled={analyzing && selectedCandidate?._id === candidate._id}
+                    className="mt-3 w-full px-4 py-2 bg-gradient-to-r from-[#22d3ee] to-[#06b6d4] text-[#f8fafc] text-sm font-medium rounded-lg hover:shadow-lg hover:shadow-[#22d3ee]/20 transition-all duration-200 hover:scale-[1.01] disabled:opacity-60"
+                  >
+                    🤖 Generate AI Insights
+                  </button>
                 </div>
               ))}
             </div>
