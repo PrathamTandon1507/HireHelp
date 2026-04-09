@@ -25,41 +25,17 @@ import asyncio
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Initialize DB Client with timeout
+    # Create MongoDB client instantly (non-blocking)
     db.client = AsyncIOMotorClient(
         settings.mongodb_url,
         serverSelectionTimeoutMS=5000
     )
-    
-    # Test connection with strict timeout
-    try:
-        # Avoid hanging forever if network is slow
-        await asyncio.wait_for(db.client.admin.command('ping'), timeout=5.0)
-        print("✓ Connected to MongoDB")
-    except Exception as e:
-        print(f"✗ MongoDB Connection Warning: {e}")
-        # We continue to allow the server to start
-    
-    # Initialize RAG System in BACKGROUND (FAISS loading can be slow)
-    async def bootstrap_rag():
-        try:
-            from ml.rag_system import initialize_rag, sync_rag_with_db
-            # This line loads the heavy sentence-transformer model
-            initialize_rag(settings.groq_api_key)
-            print("✓ RAG System Initialized (FAISS + Groq)")
-            
-            # Sync index with MongoDB
-            db_instance = db.client[settings.database_name]
-            await sync_rag_with_db(db_instance)
-        except Exception as e:
-            print(f"✗ RAG Background Error: {e}")
+    print("✓ MongoDB client created")
+    print("✓ RAG system will lazy-load on first request")
 
-    # Start the bootstrap task
-    asyncio.create_task(bootstrap_rag())
-    
-    yield
-    
-    # Shutdown: Close DB Client
+    yield  # <-- Port opens HERE immediately
+
+    # Shutdown
     if db.client:
         db.client.close()
         print("✓ Disconnected from MongoDB")
