@@ -42,11 +42,17 @@ async def lifespan(app: FastAPI):
     
     # Initialize RAG System (FAISS + Groq)
     try:
-        from ml.rag_system import initialize_rag
+        from ml.rag_system import initialize_rag, sync_rag_with_db
         initialize_rag(settings.groq_api_key)
         print("✓ RAG System Initialized (FAISS + Groq)")
+        
+        # Sync index with MongoDB (handles Render restarts)
+        db_instance = db.client[settings.database_name]
+        indexed_count = await sync_rag_with_db(db_instance)
+        if indexed_count > 0:
+            print(f"✓ RAG Sync: {indexed_count} candidates cached in memory")
     except Exception as e:
-        print(f"✗ RAG Initialization Error: {e}")
+        print(f"✗ RAG Initialization/Sync Error: {e}")
     
     yield
     

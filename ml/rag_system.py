@@ -169,8 +169,7 @@ The 'analysis_report' MUST follow this EXACT format with STRENGTHS and IMPROVEME
                 skill_gaps=list(result.get("skill_gaps", []))[:10],
                 interview_questions=list(result.get("interview_questions", []))[:4]
             )
-            
-            logger.info(f"Analysis complete for {application_id}: score={output.match_score}")
+                  logger.info(f"Analysis complete for {application_id}: score={output.match_score}")
             return output
             
         except json.JSONDecodeError as e:
@@ -180,6 +179,20 @@ The 'analysis_report' MUST follow this EXACT format with STRENGTHS and IMPROVEME
             logger.error(f"RAG analysis error for {application_id}: {e}")
             return self._default_output()
     
+    def batch_index_applications(self, apps: list) -> int:
+        """
+        Batch index application resumes into the vector store.
+        Used for startup synchronization.
+        """
+        count = 0
+        for app in apps:
+            app_id = str(app.get("_id"))
+            resume_text = app.get("resume_text")
+            if app_id and resume_text:
+                self.vector_store.add_resume(app_id, resume_text)
+                count += 1
+        return count
+
     @staticmethod
     def _default_output() -> RAGOutput:
         """Fallback output on error"""
@@ -239,3 +252,25 @@ async def analyze_application(
         "ai_skill_gaps": output.skill_gaps,
         "ai_interview_questions": output.interview_questions
     }
+
+
+async def sync_rag_with_db(db) -> int:
+    """
+    Synchronizes the in-memory FAISS index with existing applications in MongoDB.
+    Call this on backend startup to ensure RAG works after service restarts.
+    """
+    try:
+        analyzer = get_rag_analyzer()
+        # Fetch applications that have resume text
+        cursor = db.applications.find({"resume_text": {"$exists": True, "$ne": ""}})
+        apps = await cursor.to_list(length=1000)
+        
+        if not apps:
+            return 0
+            
+        indexed_count = analyzer.batch_index_applications(apps)
+        logger.info(f"RAG Sync: Successfully indexed {indexed_count} existing applications from DB")
+        return indexed_count
+    except Exception as e:
+        logger.error(f"RAG Sync Failed: {e}")
+        return 0
