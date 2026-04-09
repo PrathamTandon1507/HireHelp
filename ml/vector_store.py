@@ -131,4 +131,4 @@ class FAISSVectorStore:
         self.chunk_metadata = []
         self._indexed_apps.clear()
         self.chunk_cache.clear()
-        logger.info("Vector store cleared") 
+        logger.info("Vector store cleared")

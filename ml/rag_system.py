@@ -1,232 +1,116 @@
-"""
-HireHelp RAG System — BM25 Retrieval + Groq LLM Generation
-=============================================================
-Genuine Retrieval-Augmented Generation architecture:
-
-  CHUNK   → Split resume into overlapping word-level chunks
-  RETRIEVE → BM25 ranks chunks by relevance to each job requirement/skill
-  AUGMENT  → Top-ranked chunks injected as grounded context into LLM prompt
-  GENERATE → Groq LLM produces evidence-based structured analysis
-
-Why BM25 instead of FAISS + SentenceTransformer?
-  - SentenceTransformer loads a 420MB model → OOM on Render free tier (512MB limit)
-  - BM25 is pure Python math — zero ML model loading, <5MB RAM
-  - BM25 is what Elasticsearch/OpenSearch use in production RAG pipelines
-  - For skill/keyword-heavy resume matching it often outperforms dense retrieval
-"""
+"""Production-ready RAG system for HireHelp candidate-job matching"""
 
 import json
 import re
 import logging
 import asyncio
-from math import log
-from typing import List, Optional
+from typing import Optional
 
 from groq import Groq
 
 from .models import JobModel, CandidateProfile, RAGOutput
+from .vector_store import FAISSVectorStore
 
 logger = logging.getLogger(__name__)
 
 
-# ============================================================================
-# BM25 RETRIEVAL ENGINE
-# ============================================================================
-
-class BM25Retriever:
-    """
-    BM25 sparse retrieval — Okapi BM25 algorithm.
-    Same retrieval core used by Elasticsearch and production RAG systems.
-    No ML models, no downloads, pure math. Memory: <5MB.
-    """
-
-    def __init__(self, k1: float = 1.5, b: float = 0.75):
-        self.k1 = k1  # term frequency saturation
-        self.b = b    # length normalisation
-
-    def _tokenize(self, text: str) -> List[str]:
-        """Lowercase and split on whitespace."""
-        return text.lower().split()
-
-    def retrieve(self, query: str, chunks: List[str], top_k: int = 5) -> List[str]:
-        """
-        Rank chunks by BM25 score against query and return top_k.
-        Returns only chunks with score > 0 (i.e. genuine term overlap).
-        """
-        if not chunks:
-            return []
-
-        tokenized_corpus = [self._tokenize(c) for c in chunks]
-        avg_dl = sum(len(d) for d in tokenized_corpus) / max(len(tokenized_corpus), 1)
-
-        # Build IDF across this chunk corpus
-        n = len(tokenized_corpus)
-        df: dict[str, int] = {}
-        for doc in tokenized_corpus:
-            for term in set(doc):
-                df[term] = df.get(term, 0) + 1
-
-        idf = {
-            term: log((n - freq + 0.5) / (freq + 0.5) + 1)
-            for term, freq in df.items()
-        }
-
-        # Score each chunk
-        query_terms = self._tokenize(query)
-        scores: List[float] = []
-        for doc in tokenized_corpus:
-            dl = len(doc)
-            score = 0.0
-            for term in query_terms:
-                if term not in idf:
-                    continue
-                tf = doc.count(term)
-                denom = tf + self.k1 * (1 - self.b + self.b * dl / avg_dl)
-                score += idf[term] * (tf * (self.k1 + 1)) / denom
-            scores.append(score)
-
-        # Sort descending and return top_k with positive score
-        ranked = sorted(zip(scores, chunks), key=lambda x: x[0], reverse=True)
-        return [chunk for score, chunk in ranked[:top_k] if score > 0]
-
-
-# ============================================================================
-# RAG ANALYZER
-# ============================================================================
-
 class RAGAnalyzer:
     """
-    Production RAG pipeline: BM25 Retrieval + Groq LLM Generation.
-
-    Per-request flow (stateless — no global FAISS index to maintain):
-      1. Chunk the candidate's resume into overlapping word windows
-      2. For each job skill and requirement, BM25-retrieve the most relevant chunks
-      3. Deduplicate and assemble a compact context (≤10 chunks)
-      4. Inject context into a structured prompt for Groq LLM
-      5. Parse and validate the structured JSON response
+    Core RAG engine for candidate-job matching.
+    Multi-vector retrieval + Groq LLM analysis with deterministic outputs.
     """
-
-    def __init__(self, groq_api_key: str):
+    
+    def __init__(self, groq_api_key: str, vector_store: Optional[FAISSVectorStore] = None):
+        """Initialize RAG analyzer"""
         if not groq_api_key:
             raise ValueError("Groq API key is required")
+        
         self.client = Groq(api_key=groq_api_key)
-        self.retriever = BM25Retriever()
-        logger.info("RAGAnalyzer initialised (BM25 + Groq)")
-
-    # ------------------------------------------------------------------
-    # CHUNKING
-    # ------------------------------------------------------------------
-
-    def _chunk_resume(
-        self,
-        text: str,
-        chunk_size: int = 100,
-        overlap: int = 25
-    ) -> List[str]:
+        self.vector_store = vector_store or FAISSVectorStore()
+    
+    def _multi_vector_retrieval(self, job: JobModel, application_id: str) -> str:
         """
-        Split resume text into overlapping word-level chunks.
-        Small chunks (100 words) enable fine-grained BM25 retrieval.
+        Multi-vector retrieval: search for skills + requirements.
+        Deduplicates and limits to top 15 unique chunks for better context/speed balance.
+        Filtered by application_id to ensure candidate-specific data.
         """
-        words = text.split()
-        if not words:
-            return []
-        step = max(chunk_size - overlap, 1)
-        return [
-            " ".join(words[i: i + chunk_size])
-            for i in range(0, len(words), step)
-            if words[i: i + chunk_size]
-        ]
-
-    # ------------------------------------------------------------------
-    # RETRIEVAL
-    # ------------------------------------------------------------------
-
-    def _retrieve_context(self, resume_text: str, job: JobModel) -> str:
-        """
-        BM25 multi-query retrieval:
-          - Query per job skill (up to 8)
-          - Query per job requirement (up to 8)
-          - Fallback query: job title
-        Retrieved chunks deduplicated, capped at 10 for prompt efficiency.
-        """
-        if not resume_text or not resume_text.strip():
-            return "[No resume text available for this candidate]"
-
-        chunks = self._chunk_resume(resume_text)
-        if not chunks:
-            return resume_text[:2000]
-
-        retrieved: dict[str, bool] = {}  # ordered-dict dedup
-
-        queries = (
-            list(job.skills[:8])
-            + list(job.requirements[:8])
-            + [job.title]
-        )
-
-        for query in queries:
-            for chunk in self.retriever.retrieve(query, chunks, top_k=3):
-                retrieved[chunk] = True
-
-        # If BM25 found nothing (no term overlap), fall back gracefully
-        if not retrieved:
-            return resume_text[:2000]
-
-        return "\n---\n".join(list(retrieved.keys())[:10])
-
-    # ------------------------------------------------------------------
-    # PROMPT BUILDING
-    # ------------------------------------------------------------------
-
+        context_fragments = {}
+        
+        # Search for each skill
+        search_skills = job.skills[:5]
+        for skill in search_skills:
+            results = self.vector_store.search(skill, top_k=4, application_id=application_id)
+            for result in results:
+                context_fragments[result] = True
+        
+        # Search for each requirement
+        search_reqs = job.requirements[:5]
+        for requirement in search_reqs:
+            results = self.vector_store.search(requirement, top_k=4, application_id=application_id)
+            for result in results:
+                context_fragments[result] = True
+        
+        # If still little context, search with job title
+        if len(context_fragments) < 3:
+            results = self.vector_store.search(job.title, top_k=5, application_id=application_id)
+            for result in results:
+                context_fragments[result] = True
+        
+        # Format context
+        context = "\n---\n".join(list(context_fragments.keys())[:10])
+        return context if len(context_fragments) > 0 else "[No relevant detailed resume content found for this candidate]"
+    
     def _build_prompt(
         self,
         job: JobModel,
         candidate: CandidateProfile,
         context: str
     ) -> str:
-        """Structured RAG prompt with retrieved resume context."""
-        skills_str = ", ".join(candidate.skills) if candidate.skills else "Not specified"
-        bio_str = candidate.bio or "Not provided"
-        req_str = ", ".join(job.requirements[:10]) if job.requirements else "Not specified"
-        jskills_str = ", ".join(job.skills[:10]) if job.skills else "Not specified"
+        """Build structured prompt for LLM analysis"""
+        
+        # Fallback to raw resume text if RAG fragments are missing
+        if context == "[No relevant detailed resume content found for this candidate]" or len(context) < 100:
+            raw_preview = candidate.resume_text[:2000] if candidate.resume_text else "[No resume text available]"
+            context = f"RETRIEVAL NOTE: Semantic search returned sparse results. Using raw resume excerpt:\n{raw_preview}"
 
-        return f"""You are an expert hiring analyst. Using the retrieved resume sections below as your PRIMARY evidence, evaluate the candidate's fit for the role.
+        prompt = f"""You are an expert hiring analyst. Evaluate the candidate's alignment with the job using the provided resume fragments and profile.
 
-## RETRIEVED RESUME SECTIONS (BM25-ranked by relevance to job requirements):
+## Resume Context (retrieved fragments for this candidate):
 {context}
 
-## CANDIDATE PROFILE:
-Skills listed: {skills_str}
-Bio: {bio_str}
+## Candidate Profile:
+Bio: {candidate.bio}
+Skills: {', '.join(candidate.skills)}
 
-## ROLE: {job.title} at {job.company_name}
-## DESCRIPTION: {job.description[:600]}
-## REQUIRED SKILLS: {jskills_str}
-## KEY REQUIREMENTS: {req_str}
+## Job Requirements:
+Position: {job.title}
+Company: {job.company_name}
+Description: {job.description}
+Key Requirements: {', '.join(job.requirements)}
+Required Skills: {', '.join(job.skills)}
 
-Base your analysis on evidence from the retrieved sections above.
+---
 
-SCORING GUIDE:
-- 85-100: Exceptional — nearly all requirements met with clear evidence
-- 70-84: Strong — most requirements met, minor gaps
-- 50-69: Moderate — foundational fit, missing specific experience
-- <50: Poor — significant skills or experience mismatch
+SCORING CRITERIA:
+- 90-100: Exceptional match, all core skills and requirements met.
+- 70-89: Strong match, most key requirements met with some minor gaps.
+- 50-69: Moderate match, has foundational skills but lacks specific experience.
+- <50: Poor match, significant missing skills or irrelevant background.
 
-Output ONLY valid JSON (no markdown fences, no extra text):
+Output ONLY valid JSON (no markdown, no text before/after). 
+The 'analysis_report' MUST follow this EXACT format with STRENGTHS and IMPROVEMENTS sections:
 
 {{
-  "match_score": <integer 0-100>,
-  "analysis_report": "STRENGTHS:\\n• <evidence-based strength>\\n• <another strength>\\n\\nIMPROVEMENTS:\\n• <specific gap>\\n• <another gap>",
-  "pros": ["<strength 1>", "<strength 2>", "<strength 3>"],
-  "cons": ["<gap 1>", "<gap 2>", "<gap 3>"],
-  "skill_gaps": ["<missing skill>", "<missing skill>"],
-  "interview_questions": ["<targeted question 1>", "<targeted question 2>", "<targeted question 3>"]
+  "match_score": <Integer 0-100>,
+  "analysis_report": "STRENGTHS:\n• <A specific, evidence-based strength from the resume>\n• <Another specific strength>\n\nIMPROVEMENTS:\n• <A specific gap relative to the job requirements>\n• <Another specific area for improvement>",
+  "pros": [<3-5 concise strengths>],
+  "cons": [<3-5 concise specific improvement areas>],
+  "skill_gaps": [<missing required skills>],
+  "interview_questions": [<3-4 targeted questions based on the candidate's gaps>]
 }}"""
-
-    # ------------------------------------------------------------------
-    # FULL PIPELINE
-    # ------------------------------------------------------------------
-
+        
+        return prompt
+    
     def analyze_candidate(
         self,
         application_id: str,
@@ -234,41 +118,46 @@ Output ONLY valid JSON (no markdown fences, no extra text):
         candidate: CandidateProfile
     ) -> RAGOutput:
         """
-        Execute the full RAG pipeline:
-          1. RETRIEVE  — BM25 finds the most job-relevant resume chunks
-          2. AUGMENT   — Chunks injected into structured prompt
-          3. GENERATE  — Groq LLM produces grounded structured analysis
+        Execute full RAG pipeline:
+        1. Index resume (if not already)
+        2. Multi-vector retrieval (candidate-filtered)
+        3. LLM analysis
+        4. Parse and validate output
         """
         try:
-            # Step 1 — Retrieve
-            context = self._retrieve_context(candidate.resume_text, job)
-
-            # Step 2 — Augment
+            # Index resume if needed (ensure application_id is tracked)
+            self.vector_store.add_resume(candidate.application_id, candidate.resume_text)
+            
+            # Multi-vector retrieval with filtering
+            context = self._multi_vector_retrieval(job, candidate.application_id)
+            
+            # Build prompt
             prompt = self._build_prompt(job, candidate, context)
-
-            # Step 3 — Generate
+            
+            # LLM inference with low temperature and JSON mode
             response = self.client.chat.completions.create(
-                model="llama-3.1-8b-instant",   # fast structured extraction model
+                model="llama-3.3-70b-versatile",
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.1,
-                max_tokens=900,
+                max_tokens=1000,
                 response_format={"type": "json_object"}
             )
-
+            
             response_text = response.choices[0].message.content.strip()
-
-            # Parse JSON
+            
+            # Extract JSON
             json_match = re.search(r'\{[\s\S]*\}', response_text)
             if not json_match:
-                logger.error(f"No JSON in LLM response for {application_id}")
+                logger.error(f"No JSON found in response for {application_id}")
                 return self._default_output()
-
+            
             result = json.loads(json_match.group())
-
-            # Normalise score
+            
+            # Validate and construct output
             raw_score = result.get("match_score", 0)
             try:
                 score_val = float(raw_score)
+                # If score is a decimal (e.g. 0.85), convert to percentage
                 if 0 < score_val <= 1.0:
                     score_val *= 100
                 match_score = max(0, min(100, int(round(score_val))))
@@ -277,68 +166,80 @@ Output ONLY valid JSON (no markdown fences, no extra text):
 
             output = RAGOutput(
                 match_score=match_score,
-                explanation=str(result.get("analysis_report", ""))[:2000],
+                explanation=str(result.get("analysis_report", result.get("strengths_and_weaknesses", "Unable to analyze")))[:2000],
                 pros=list(result.get("pros", []))[:5],
                 cons=list(result.get("cons", []))[:5],
                 skill_gaps=list(result.get("skill_gaps", []))[:10],
                 interview_questions=list(result.get("interview_questions", []))[:4]
             )
-            logger.info(
-                f"RAG analysis complete for {application_id}: score={output.match_score}"
-            )
+            logger.info(f"Analysis complete for {application_id}: score={output.match_score}")
             return output
-
+            
         except json.JSONDecodeError as e:
             logger.error(f"JSON decode error for {application_id}: {e}")
             return self._default_output()
         except Exception as e:
             logger.error(f"RAG analysis error for {application_id}: {e}")
             return self._default_output()
+    
+    def batch_index_applications(self, apps: list) -> int:
+        """
+        Batch index application resumes into the vector store.
+        Used for startup synchronization.
+        """
+        count = 0
+        for app in apps:
+            app_id = str(app.get("_id"))
+            resume_text = app.get("resume_text")
+            if app_id and resume_text:
+                self.vector_store.add_resume(app_id, resume_text)
+                count += 1
+        return count
 
     @staticmethod
     def _default_output() -> RAGOutput:
-        """Safe fallback when pipeline fails."""
+        """Fallback output on error"""
         return RAGOutput(
             match_score=0,
             explanation="Analysis failed. Please try again.",
             pros=[],
-            cons=["Unable to process analysis"],
+            cons=["Unable to process"],
             skill_gaps=[],
             interview_questions=[]
         )
 
 
 # ============================================================================
-# SINGLETON MANAGEMENT
+# INTEGRATION FUNCTIONS (Call from backend)
 # ============================================================================
 
-_rag_analyzer: Optional[RAGAnalyzer] = None
+_rag_analyzer = None  # Singleton instance
 
 
 def initialize_rag(groq_api_key: str) -> RAGAnalyzer:
-    """Initialise singleton. Safe to call multiple times."""
+    """
+    Initialize RAG system (call once at backend startup).
+    Returns singleton analyzer.
+    """
     global _rag_analyzer
     if _rag_analyzer is None:
         _rag_analyzer = RAGAnalyzer(groq_api_key=groq_api_key)
-        logger.info("RAG system initialised")
+        logger.info("RAG system initialized")
     return _rag_analyzer
 
 
 def get_rag_analyzer() -> RAGAnalyzer:
-    """Get singleton — auto-initialises if called before startup completes."""
+    """Get singleton RAG analyzer instance with safe retry initialization"""
     global _rag_analyzer
     if _rag_analyzer is None:
+        # Attempt to recover if called before lifespan finishes
         from core.config import settings
         if settings.groq_api_key:
-            logger.warning("RAG not initialised at startup — emergency init")
+            logger.warning("RAG analyzer was not initialized; attempting emergency initialization")
             return initialize_rag(settings.groq_api_key)
-        raise RuntimeError("RAG system not initialised and GROQ_API_KEY not found.")
+        raise RuntimeError("RAG system not initialized and no API key found.")
     return _rag_analyzer
 
-
-# ============================================================================
-# ASYNC INTEGRATION (called from backend API)
-# ============================================================================
 
 async def analyze_application(
     application_id: str,
@@ -346,13 +247,17 @@ async def analyze_application(
     candidate: CandidateProfile
 ) -> dict:
     """
-    Async wrapper for FastAPI integration.
-    Groq HTTP call runs in a thread pool — event loop stays unblocked.
+    Async wrapper for backend integration.
+    Runs the blocking AI logic in a separate thread to prevent event loop freeze.
     """
+    import asyncio
     analyzer = get_rag_analyzer()
+    
+    # Offload blocking AI processing to a thread
     output = await asyncio.to_thread(
         analyzer.analyze_candidate, application_id, job, candidate
     )
+    
     return {
         "ai_match_score": output.match_score,
         "ai_explanation": output.explanation,
@@ -365,8 +270,21 @@ async def analyze_application(
 
 async def sync_rag_with_db(db) -> int:
     """
-    Stateless BM25 mode — no persistent index to sync.
-    Retrieval is computed fresh per-request from stored resume_text.
+    Synchronizes the in-memory FAISS index with existing applications in MongoDB.
+    Call this on backend startup to ensure RAG works after service restarts.
     """
-    logger.info("BM25 RAG is stateless — no DB sync required")
-    return 0
+    try:
+        analyzer = get_rag_analyzer()
+        # Fetch applications that have resume_text
+        cursor = db.applications.find({"resume_text": {"$exists": True, "$ne": ""}})
+        apps = await cursor.to_list(length=1000)
+        
+        if not apps:
+            return 0
+            
+        indexed_count = analyzer.batch_index_applications(apps)
+        logger.info(f"RAG Sync: Successfully indexed {indexed_count} existing applications from DB")
+        return indexed_count
+    except Exception as e:
+        logger.error(f"RAG Sync Failed: {e}")
+        return 0
