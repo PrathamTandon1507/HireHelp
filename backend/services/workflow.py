@@ -1,11 +1,9 @@
-from z3 import *
 from models.enums import ApplicationStage
 
 from typing import Tuple
 
 class WorkflowValidator:
     def __init__(self):
-        self.solver = Solver()
         self._setup_constraints()
     
     def _setup_constraints(self):
