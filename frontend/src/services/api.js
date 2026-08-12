@@ -3,7 +3,7 @@
  * Handles all backend communication, token injection, and data normalization.
  */
 
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 /**
  * Normalizes snake_case keys from backend to camelCase for frontend
